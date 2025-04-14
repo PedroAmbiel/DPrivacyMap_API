@@ -1,9 +1,9 @@
 import requests
 from fastapi import FastAPI
-from promptrequest import PromptRequest
+from models.api.api_prompt_request import PromptRequest
 import psycopg
 from constants import *
-from airequestbody import *
+from models.ai.ai_request_body import *
 import json
 
 api = FastAPI()
@@ -16,6 +16,57 @@ basicHeader = {
 
 url = 'http://localhost:11434/api/generate'
 
+def buscarIdsOperacoes(area):
+   with conn.cursor() as cur:
+      pattern = f"%{area}%"
+
+      cur = conn.cursor()
+
+      select = cur.execute(f"SELECT id FROM \"DPrivacy\".inventario_operacoes WHERE area ILIKE %s ", (pattern,)).fetchall()
+
+      lista_ids = []
+      for row in select:
+         lista_ids.append(row[0])
+
+   return lista_ids
+   
+def buscarIdsRiscosPorOperacao(listaIds):
+   with conn.cursor() as cur:
+      
+      cur = conn.cursor()
+
+      select = cur.execute(f" SELECT DISTINCT a.id FROM \"DPrivacy\".riscos a " +
+                           " JOIN \"DPrivacy\".rl_inventario_riscos b ON b.fk_risco = a.id " + 
+                           " WHERE b.fk_inventario = ANY(%s) ", (listaIds,)).fetchall()
+
+      lista_ids = []
+      for row in select:
+         lista_ids.append(row[0])
+
+   return lista_ids
+   
+def buscarPlanosComBaseRiscos(listaIds):
+      with conn.cursor() as cur:
+      
+         cur = conn.cursor()
+
+         select = cur.execute(f" SELECT DISTINCT a.detalhes FROM \"DPrivacy\".planos a " +
+                              " JOIN \"DPrivacy\".rl_riscos_planos b ON b.fk_risco = a.id " + 
+                              " WHERE b.fk_risco = ANY(%s) ", (listaIds,)).fetchall()
+
+         lista_ids = []
+         for row in select:
+            lista_ids.append(row[0])
+
+      return lista_ids
+
+
+def criarBodyRequestAI(userPrompt, tratativas):
+   sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
+
+   data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
+
+   return data
 
 # data = {
 #    'prompt': 'make a small song lyric',
@@ -39,19 +90,46 @@ url = 'http://localhost:11434/api/generate'
 
 #   conn.commit()
 
+
+
+#--------------------------EXEMPLO DE SELECT USANDO PSYCOPG
+# with conn.cursor() as cur:
+#         search_term = "example"
+#         pattern = f"%{'Financeiro'}%"
+
+# cur = conn.cursor()
+
+# select = cur.execute(f"SELECT id FROM \"DPrivacy\".inventario_operacoes WHERE area ILIKE %s ", (pattern,)).fetchall()
+
+# print(select)
+
+
 @api.post("/generate")
 def gerarResposta(body:PromptRequest):
-   url = 'http://localhost:11434/api/generate'
-  
-   data = {
-      'prompt': body.prompt,
-      'model': AI_MODEL,
-      'stream': False
-   }
 
-   print(data)
+   area = 'Financeiro'
+   tipo_operacao = ''
+   dados_coletados = ''
+   finalidade = ''
+   revisao = ''
 
-   response = requests.post(url, headers=basicHeader, json= data)
+   
+   user_prompt = body.prompt
+
+   lista_IDS = buscarIdsOperacoes(area)
+   listariscos = buscarIdsRiscosPorOperacao(lista_IDS)
+   tratativas = buscarPlanosComBaseRiscos(listariscos)
+
+   for a in tratativas:
+      print(a, '\n')
+
+   user_prompt += f"<tratativas>{str(tratativas)} </tratativas> \nA partir das tratativas informadas, para *CADA TRATATIVA DIFERENTE*, informe o nome da tratativa. Em seguida, descreva como deve ser o protocolo para assegurar a integridade do dado. Sua resposta deve SEMPRE ter o seguinte padrão: <title>Tratativa com base nos dados: {area} </title> \n <body><tratativa><significado></significado><sugestões></sugestões></tratativa></body> --END dentro da tag body, descreva somente suas sugestões COM BASE NAS TRATATIVAS. Não reescreva as tratativas novamente. As suas sugestões devem ser criada a partir das tratativas + suas próprias sugestões. Sempre seja o mais claro possível e explique como cada sugestão deve ser realizada."
+
+   data = criarBodyRequestAI(user_prompt, tratativas)
+
+   # print(data.to_dict())
+
+   response = requests.post(url, headers=basicHeader, json= data.to_dict())
 
    # if response.status_code == 200:
    print('Response:', response.json())
@@ -59,5 +137,7 @@ def gerarResposta(body:PromptRequest):
    #    print('Error:', response.status_code, response.text)
 
    return response.json()['response']
+   # return ''
   
+
 
