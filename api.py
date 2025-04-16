@@ -1,14 +1,30 @@
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, status, HTTPException
 from models.api.api_prompt_request import PromptRequest
 import psycopg
 from constants import *
 from models.ai.ai_request_body import *
-import json
+from models.api.user_login import *
+from models.api.user_login_response import *
+import hashlib
+from fastapi.middleware.cors import CORSMiddleware
 
 api = FastAPI()
 conn = psycopg.connect(BD_CONN)
 
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://localhost",
+]
+
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 basicHeader = {
    'Content-Type': 'application/json'
@@ -102,6 +118,43 @@ def criarBodyRequestAI(userPrompt, tratativas):
 # select = cur.execute(f"SELECT id FROM \"DPrivacy\".inventario_operacoes WHERE area ILIKE %s ", (pattern,)).fetchall()
 
 # print(select)
+
+
+@api.post("/login")
+def login(body:UserLogin):
+   #Criptografando a senha
+   password = body.senha
+   password_bytes = password.encode('utf-8')
+   # Create SHA-256 hash
+   senha_hashed = hashlib.sha256(password_bytes)
+
+
+   with conn.cursor() as cur:
+      
+      cur = conn.cursor()
+
+      select = cur.execute(f" SELECT u.id, u.nome, u.email, u.responsavel, u.senha, u.fk_perfil FROM \"DPrivacy\".usuarios u " +
+                           " WHERE u.email = %s ", [body.email]).fetchone()
+
+
+      # try:
+      if(select == None):
+         raise HTTPException(status_code=400, detail="Usuário não encontrado")
+      
+      print('Senha Banco: ', str(select[4]), "senha post: ", senha_hashed.hexdigest())
+
+      if(str(select[4]) != senha_hashed.hexdigest()):
+         raise HTTPException(status_code=400, detail="Senha inválida")
+      
+      response = UserLoginResponse(id=select[0], nome=select[1], email=select[2], responsavel=select[3], perfil=select[5])
+      
+      # except HTTPException as erro:
+         # response = {"code": erro.status_code, "detalhe": erro.detail}
+      
+
+   return response
+            
+
 
 
 @api.post("/generate")
