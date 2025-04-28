@@ -82,7 +82,9 @@ def buscarPlanosComBaseRiscos(listaIds):
 
 
 def criarBodyRequestAI(userPrompt, tratativas):
-   sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
+   # sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
+
+   sys_prompt = "Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Formule uma resposta curta."
 
    data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
 
@@ -173,14 +175,16 @@ def gerarResposta(body:PromptRequest):
    
    user_prompt = body.prompt
 
-   lista_IDS = buscarIdsOperacoes(area)
-   listariscos = buscarIdsRiscosPorOperacao(lista_IDS)
-   tratativas = buscarPlanosComBaseRiscos(listariscos)
+   # lista_IDS = buscarIdsOperacoes(area)
+   # listariscos = buscarIdsRiscosPorOperacao(lista_IDS)
+   # tratativas = buscarPlanosComBaseRiscos(listariscos)
+   tratativas = "Criação de Contrato de Trabalho com Cláusulas de Proteção de Dados."
 
    for a in tratativas:
       print(a, '\n')
 
-   user_prompt += f"<tratativas>{str(tratativas)} </tratativas> \nA partir das tratativas informadas, para *CADA TRATATIVA DIFERENTE*, informe o nome da tratativa. Em seguida, descreva como deve ser o protocolo para assegurar a integridade do dado. Sua resposta deve SEMPRE ter o seguinte padrão: <title>Tratativa com base nos dados: {area} </title> \n <body><tratativa><significado></significado><sugestões></sugestões></tratativa></body> --END dentro da tag body, descreva somente suas sugestões COM BASE NAS TRATATIVAS. Não reescreva as tratativas novamente. As suas sugestões devem ser criada a partir das tratativas + suas próprias sugestões. Sempre seja o mais claro possível e explique como cada sugestão deve ser realizada."
+   # user_prompt += f"<tratativas>{str(tratativas)} </tratativas> \nA partir das tratativas informadas, para *CADA TRATATIVA DIFERENTE*, informe o nome da tratativa. Em seguida, descreva como deve ser o protocolo para assegurar a integridade do dado. Sua resposta deve SEMPRE ter o seguinte padrão: <title>Tratativa com base nos dados: {area} </title> \n <body><tratativa><significado></significado><sugestões></sugestões></tratativa></body> --END dentro da tag body, descreva somente suas sugestões COM BASE NAS TRATATIVAS. Não reescreva as tratativas novamente. As suas sugestões devem ser criada a partir das tratativas + suas próprias sugestões. Sempre seja o mais claro possível e explique como cada sugestão deve ser realizada."
+   user_prompt += f"Preciso que crie um plano de ação a partir da tratativa: *{ tratativas }*, preciso que crie uma passo a passo coerênte."
 
    data = criarBodyRequestAI(user_prompt, tratativas)
 
@@ -264,11 +268,11 @@ def salvarAtualizarFichaInventario(isFinalizada:bool, body:FichaInventarioCadast
 
       if(body.exclusao != None):
          params.append(body.exclusao)
-         
-      params.append(body.usuario)
 
       if(isFinalizada):
          params.append(True)
+         
+      params.append(body.usuario)
 
       cur = conn.cursor()
 

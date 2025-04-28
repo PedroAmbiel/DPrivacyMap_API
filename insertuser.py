@@ -21,7 +21,7 @@ def inserirNovoUsuario():
         print(hash_object)
         cur = conn.cursor()
 
-        cur.execute(f"INSERT INTO \"DPrivacy\".usuarios (nome, senha, responsavel, fk_perfil, email) values (%s, %s, %s, %s, %s)", ('amandapt', hash_object.hexdigest(), 'AMANDA POLPETA TEODORO', 1, 'teste@gmail.com'))
+        cur.execute(f"INSERT INTO \"DPrivacy\".usuarios (nome, senha, responsavel, fk_perfil, email) values (%s, %s, %s, %s, %s)", ('pedroam', hash_object.hexdigest(), 'PEDRO AMBIEL MASCHIETTO', 1, 'teste@teste.com'))
 
         conn.commit()
 
