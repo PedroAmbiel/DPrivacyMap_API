@@ -6,8 +6,12 @@ from constants import *
 from models.ai.ai_request_body import *
 from models.api.user_login import *
 from models.api.user_login_response import *
+from models.dprivacy_front.ficha_cadastro import *
+from models.dprivacy_front.fichas_redigindo_response import *
+from models.dprivacy_front.ficha_inventario_response import *
 import hashlib
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 
 api = FastAPI()
 conn = psycopg.connect(BD_CONN)
@@ -191,6 +195,138 @@ def gerarResposta(body:PromptRequest):
 
    return response.json()['response']
    # return ''
+
+def salvarAtualizarFichaInventario(isFinalizada:bool, body:FichaInventarioCadastro):
+   insert = "INSERT INTO \"DPrivacy\".ficha_inventario ( "
+
+   if(body.area):
+      insert += " area, "
+
+   if(body.armazenamento):
+      insert += " armazenamento, "
+
+   if(body.compartilhamentoTerceiros != None):
+      insert += " compartilhamento_terceiros, "
+
+   if(body.transferenciaInternacional != None):
+      insert += " transferencia_internacional, "
+
+   if(body.exclusao != None):
+      insert += " exclusao, "
+
+   if(isFinalizada):
+      insert += " finalizado, "
+
+   insert += " fk_usuario "
+
+   insert += " ) VALUES ( "
+
+   if(body.area):
+      insert += " %s, "
+
+   if(body.armazenamento):
+      insert += " %s, "
+
+   if(body.compartilhamentoTerceiros != None):
+      insert += " %s, "
+
+   if(body.transferenciaInternacional != None):
+      insert += " %s, "
+
+   if(body.exclusao != None):
+      insert += " %s, "
+
+   if(isFinalizada):
+      insert += " %s, "
+   
+   insert += " %s "
+
+
+
+
+   insert += " ) "
+   
+   with conn.cursor() as cur:
+
+      params = []
+
+      if(body.area):
+         params.append(body.area)
+
+      if(body.armazenamento):
+         params.append(body.armazenamento)
+
+      if(body.compartilhamentoTerceiros != None):
+         params.append(body.compartilhamentoTerceiros)
+
+      if(body.transferenciaInternacional != None):
+         params.append(body.transferenciaInternacional)
+
+      if(body.exclusao != None):
+         params.append(body.exclusao)
+         
+      params.append(body.usuario)
+
+      if(isFinalizada):
+         params.append(True)
+
+      cur = conn.cursor()
+
+      cur.execute(insert, params)
+
+      conn.commit()
+
+      return True
+
   
+@api.post('/finalizar_ficha')
+def finalizarFicha(body:FichaInventarioCadastro):
+
+   salvarAtualizarFichaInventario(True, body)
+
+   return True
 
 
+@api.put('/salvar_ficha')
+def salvarFicha(body:FichaInventarioCadastro):
+
+   salvarAtualizarFichaInventario(False, body)
+
+   return True
+
+@api.get('/listar_planos_redigindo/{id_usuario}')
+def listarPlanosRedigindo(id_usuario):
+   with conn.cursor() as cur:
+      cur = conn.cursor()
+
+      select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro FROM \"DPrivacy\".ficha_inventario fi " +
+                           " WHERE fi.finalizado IS FALSE AND fi.fk_usuario = %s ", [id_usuario]).fetchall()
+      
+
+      response : List[FichasRedigindoResponse] = []
+
+      for row in select:
+         response.append(FichasRedigindoResponse(id=row[0], area=row[1], finalizado=row[2], dataCadastro=row[3]))
+
+      print(len(response))
+      if(len(response) != 0):
+         return response
+      else:
+         return 'E'
+      
+@api.get('/buscar_ficha/{id_ficha}')
+def listarPlanosRedigindo(id_ficha):
+   with conn.cursor() as cur:
+      cur = conn.cursor()
+
+      select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro, fi.armazenamento, fi.exclusao, fi.compartilhamento_terceiros, fi.transferencia_internacional FROM \"DPrivacy\".ficha_inventario fi " +
+                           " WHERE fi.finalizado IS FALSE AND fi.id = %s ", [id_ficha]).fetchone()
+      
+
+      
+      response = FichaResponse(id=select[0], area=select[1], finalizado=select[2], dataCadastro=select[3], armazenamento=select[4], exclusao=select[5], compartilhamentoTerceiros=select[6], transferenciaInternacional=select[7])
+
+
+      return response
+
+         
