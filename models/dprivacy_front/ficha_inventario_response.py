@@ -2,11 +2,17 @@ from pydantic import BaseModel
 from pydantic_extra_types.pendulum_dt import DateTime
 
 class FichaResponse(BaseModel):
-    id: int
+    id: int | None
     area: str | None
-    finalizado: bool
-    dataCadastro: DateTime
+    finalizado: bool | None
+    dataCadastro: DateTime | None
     compartilhamentoTerceiros: bool | None
     transferenciaInternacional: bool | None
     exclusao: bool | None
     armazenamento: str | None
+    tipoOperacao: list[str] | None
+    dadosColetados: list[str] | None
+    finalidade: list[str] | None
+    revisao: list[str] | None
+    retencao: list[str] | None
+    seguranca: str | None
