@@ -42,7 +42,15 @@ url = 'http://localhost:11434/api/generate'
 def criarBodyRequestAI(userPrompt, tratativa):
    # sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
 
-   sys_prompt = f"Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Sempre formule respostas curtas. Utilize o contexto para complementar a resposta <context>{tratativa}</context>"
+   # sys_prompt = f"Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Sempre formule respostas curtas. Utilize o contexto para complementar a resposta <context>{tratativa}</context>"
+
+   sys_prompt = f"""
+                    Atue como um especialista jurídico em proteção de dados e segurança da informação, com conhecimento aprofundado na LGPD (Lei nº 13.709/2018). Elabore respostas com linguagem objetiva, imperativa e técnica, como se estivesse redigindo uma diretriz corporativa ou instrução normativa. Nunca utilize elementos de linguagem direta ao usuário como "você", "sua empresa", ou "deve-se fazer".
+
+                    As respostas devem apresentar instruções claras, diretas e aplicáveis à área mencionada, com base nos princípios da LGPD. Use o contexto abaixo para embasar a redação da diretriz:
+
+                    <context>{tratativa}</context>
+                 """
 
    data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
 
@@ -84,9 +92,17 @@ def gerarResposta(idFicha:int):
          conn.commit()
 
          # user_prompt += f"<tratativas>{str(tratativas)} </tratativas> \nA partir das tratativas informadas, para *CADA TRATATIVA DIFERENTE*, informe o nome da tratativa. Em seguida, descreva como deve ser o protocolo para assegurar a integridade do dado. Sua resposta deve SEMPRE ter o seguinte padrão: <title>Tratativa com base nos dados: {area} </title> \n <body><tratativa><significado></significado><sugestões></sugestões></tratativa></body> --END dentro da tag body, descreva somente suas sugestões COM BASE NAS TRATATIVAS. Não reescreva as tratativas novamente. As suas sugestões devem ser criada a partir das tratativas + suas próprias sugestões. Sempre seja o mais claro possível e explique como cada sugestão deve ser realizada."
-         user_prompt = f"Trabalho na área de { item[4] } na minha empresa. Trabalho com informações sensíveis de meus clientes, e acabei encontrando um possível risco para \
-         para minha empresa. Esse risco é {item[2]} e já tenho o plano {item[1]} para solucinar esse risco. Como devo prosseguir, quais são os passos para tratar esse risco? \
-         <important>Sua resposta não deve ser montada com elementos html. Começe sua resposta explicando o plano e em seguida montando os passos</important>"
+         # user_prompt = f"Trabalho na área de { item[4] } na minha empresa. Trabalho com informações sensíveis de meus clientes, e acabei encontrando um possível risco para \
+         # para minha empresa. Esse risco é {item[2]} e já tenho o plano {item[1]} para solucinar esse risco. Como devo prosseguir, quais são os passos para tratar esse risco? \
+         # <important>Sua resposta não deve ser montada com elementos html. Começe sua resposta explicando o plano e em seguida montando os passos</important>"
+
+         user_prompt = f"""Área responsável: {item[4]}.  
+                           Risco identificado: {item[2]}.  
+                           Plano de mitigação em andamento: "{item[1]}".
+
+                           Com base nessas informações, elabore uma diretriz objetiva e impessoal, descrevendo como proceder na tratativa desse risco. A linguagem deve ser imperativa, com tom normativo e institucional. A resposta não deve ser dirigida a uma pessoa ou conter instruções pessoais. Inicie descrevendo a abordagem prevista no plano e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. Use texto corrido, com no máximo quebras de linha simples para separação de trechos.
+
+                        """
 
          data = criarBodyRequestAI(user_prompt, item[3])
 
@@ -948,7 +964,7 @@ def buscarSecoes(id_ficha):
    selectSecaoPlanoFicha = """SELECT spf.secao, spf.fk_ficha, spf.plano, spf.risco, spf.tratativa, spfr.resposta, spfr.data_inicio, spfr.data_fim FROM \"DPrivacy\".secao_plano_ficha spf 
                                  LEFT JOIN \"DPrivacy\".secao_plano_ficha_resposta spfr ON spfr.fk_secao_plano_ficha = spf.id
                                  WHERE spf.fk_ficha = %s
-                                 ORDER BY spf.secao ASC
+                                 ORDER BY spf.risco ASC
                                    """
 
    response : List[SecaoFichaResponse] = []
