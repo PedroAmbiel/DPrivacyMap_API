@@ -938,7 +938,8 @@ def buscarPlanosConcluidos(id_usuario):
       selectPlanoFicha = """SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro, count(sfp.id) FROM \"DPrivacy\".ficha_inventario fi 
                               JOIN \"DPrivacy\".secao_plano_ficha sfp ON sfp.fk_ficha = fi.id
                               WHERE fi.finalizado IS TRUE AND fi.fk_usuario = %s 
-                              GROUP BY 1,2,3,4"""
+                              GROUP BY 1,2,3,4
+                              ORDER BY fi.data_cadastro DESC"""
       
 
 
