@@ -717,7 +717,7 @@ def listarPlanosRedigindo(id_usuario):
       cur = conn.cursor()
 
       select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro FROM \"DPrivacy\".ficha_inventario fi " +
-                           " WHERE fi.finalizado IS FALSE AND fi.fk_usuario = %s ORDER BY fi.data_cadastro", [id_usuario]).fetchall()
+                           " WHERE fi.fk_usuario = %s ORDER BY fi.finalizado, fi.data_cadastro DESC", [id_usuario]).fetchall()
       
 
       response : List[FichasRedigindoResponse] = []
@@ -737,7 +737,7 @@ def listarPlanosRedigindo(id_ficha):
       cur = conn.cursor()
 
       select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro, fi.armazenamento, fi.exclusao, fi.compartilhamento_terceiros, fi.transferencia_internacional, seguranca FROM \"DPrivacy\".ficha_inventario fi " +
-                           " WHERE fi.finalizado IS FALSE AND fi.id = %s ", [id_ficha]).fetchone()
+                           " WHERE fi.id = %s ", [id_ficha]).fetchone()
       
       listaOperacoes = []
       # listaSeguranca = []
@@ -806,6 +806,7 @@ def listarPlanosRedigindo(id_ficha):
 
 
       return response
+   
 
 
 @api.post('/criar_secoes')
