@@ -77,8 +77,9 @@ def gerarResposta(idFicha:int):
       
       cur = conn.cursor()
 
-      select = cur.execute(f" SELECT s.secao, s.plano, s.risco, s.tratativa, fi.area, s.id FROM \"DPrivacy\".secao_plano_ficha s " +
-                           " JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha " +
+      select = cur.execute(f" SELECT s.secao, s.plano, s.risco, s.tratativa, fi.area, s.id, p.tempo_dias FROM \"DPrivacy\".secao_plano_ficha s " +
+                           " JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha "
+                           " JOIN \"DPrivacy\".planos p ON p.titulo = s.plano " +
                            " WHERE s.fk_ficha = %s ", (idFicha, )).fetchall()
 
       for item in select:
@@ -99,6 +100,7 @@ def gerarResposta(idFicha:int):
          user_prompt = f"""Área responsável: {item[4]}.  
                            Risco identificado: {item[2]}.  
                            Plano de mitigação em andamento: "{item[1]}".
+                           Tempo entre execução desse plano: "{item[6]}".
 
                            Com base nessas informações, elabore uma diretriz objetiva e impessoal, descrevendo como proceder na tratativa desse risco. A linguagem deve ser imperativa, com tom normativo e institucional. A resposta não deve ser dirigida a uma pessoa ou conter instruções pessoais. Inicie descrevendo a abordagem prevista no plano e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. Use texto corrido, com no máximo quebras de linha simples para separação de trechos.
 
@@ -109,7 +111,6 @@ def gerarResposta(idFicha:int):
          response = requests.post(url, headers=basicHeader, json= data.to_dict())
 
          print('Response:', response.json())
-
 
          update_secao_resposta = "UPDATE \"DPrivacy\".secao_plano_ficha_resposta SET resposta = %s, data_fim = now() WHERE id = %s"
 
@@ -966,7 +967,7 @@ def buscarSecoes(id_ficha):
    selectSecaoPlanoFicha = """SELECT spf.secao, spf.fk_ficha, spf.plano, spf.risco, spf.tratativa, spfr.resposta, spfr.data_inicio, spfr.data_fim FROM \"DPrivacy\".secao_plano_ficha spf 
                                  LEFT JOIN \"DPrivacy\".secao_plano_ficha_resposta spfr ON spfr.fk_secao_plano_ficha = spf.id
                                  WHERE spf.fk_ficha = %s
-                                 ORDER BY spf.risco ASC
+                                 ORDER BY spf.secao ASC
                                    """
 
    response : List[SecaoFichaResponse] = []
