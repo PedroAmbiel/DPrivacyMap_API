@@ -7,8 +7,8 @@ class FichaInventarioCadastro(BaseModel):     #Classe de modelo para a nossa API
         tipoOperacao: list[str] | None
         dadosColetados: list[str] | None
         finalidade: list[str] | None
-        revisao: list[str] | None
-        retencao: list[str] | None
+        revisao: str | None
+        retencao: str | None
         seguranca: str | None
         armazenamento: str | None
         exclusao: bool | None

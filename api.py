@@ -15,6 +15,7 @@ from models.dprivacy_front.secao_ficha_response import *
 import hashlib
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
+from openai import OpenAI
 
 api = FastAPI()
 conn = psycopg.connect(BD_CONN)
@@ -44,13 +45,37 @@ def criarBodyRequestAI(userPrompt, tratativa):
 
    # sys_prompt = f"Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Sempre formule respostas curtas. Utilize o contexto para complementar a resposta <context>{tratativa}</context>"
 
-   sys_prompt = f"""
-                    Atue como um especialista jurídico em proteção de dados e segurança da informação, com conhecimento aprofundado na LGPD (Lei nº 13.709/2018). Elabore respostas com linguagem objetiva, imperativa e técnica, como se estivesse redigindo uma diretriz corporativa ou instrução normativa. Nunca utilize elementos de linguagem direta ao usuário como "você", "sua empresa", ou "deve-se fazer".
+   # sys_prompt = f"""
+   #                  Atue como um especialista jurídico em proteção de dados e segurança da informação, com conhecimento aprofundado na LGPD (Lei nº 13.709/2018). Elabore respostas com linguagem objetiva, imperativa e técnica, como se estivesse redigindo uma diretriz corporativa ou instrução normativa. Nunca utilize elementos de linguagem direta ao usuário como "você", "sua empresa", ou "deve-se fazer".
 
-                    As respostas devem apresentar instruções claras, diretas e aplicáveis à área mencionada, com base nos princípios da LGPD. Use o contexto abaixo para embasar a redação da diretriz:
+   #                  As respostas devem apresentar instruções claras, diretas e aplicáveis à área mencionada, com base nos princípios da LGPD. Use o contexto abaixo para embasar a redação da diretriz:
 
-                    <context>{tratativa}</context>
-                 """
+   #                  <context>{tratativa}</context>
+   #               """
+
+   # sys_prompt = f"""
+   #                Considere que você é um advogado especializado em gestão de LGPD e na criação e gestão de planos de ação para uma implementação completa de 
+   #                um projeto de LGPD em grandes empresas. Você foi contratado para criar um plano efetivo e detalhado para o plano apresentado.
+
+   #                Utilize os dados a seguir para complementar sua resposta: {tratativa} 
+   #              """
+
+   # sys_prompt = f"""
+   #                Você é um advogado especialista em LGPD, com foco em ajudar empresas a entender e aplicar práticas de proteção de dados pessoais. 
+   #                Sua missão é analisar planos de ação com base em riscos identificados e fornecer explicações claras, simples e objetivas. 
+   #                Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
+   #                Nunca responda diretamente à pergunta.
+   #                Não alongue suas respostas para mais de 300 palavras.
+
+   #                Suas respostas devem utilizar o seguinte contexto: {tratativa}
+   #               """
+   
+   sys_prompt = f"""Você é um advogado especialista em LGPD, com foco em ajudar empresas a entender e aplicar práticas de proteção de dados pessoais. 
+               Sua missão é analisar planos de ação com base em riscos identificados e fornecer explicações claras, simples e objetivas. 
+               Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
+               Nunca responda diretamente à pergunta.
+               Não alongue suas respostas para mais de 300 palavras.
+               """
 
    data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
 
@@ -77,10 +102,11 @@ def gerarResposta(idFicha:int):
       
       cur = conn.cursor()
 
-      select = cur.execute(f" SELECT s.secao, s.plano, s.risco, s.tratativa, fi.area, s.id, p.tempo_dias FROM \"DPrivacy\".secao_plano_ficha s " +
+      select = cur.execute(f" SELECT s.secao, s.plano, s.risco, s.tratativa, fi.area, s.id, p.tempo_dias, p.detalhe_planos FROM \"DPrivacy\".secao_plano_ficha s " +
                            " JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha "
                            " JOIN \"DPrivacy\".planos p ON p.titulo = s.plano " +
-                           " WHERE s.fk_ficha = %s ", (idFicha, )).fetchall()
+                           " WHERE s.fk_ficha = %s "
+                           " ORDER BY s.secao", (idFicha, )).fetchall()
 
       for item in select:
 
@@ -96,25 +122,132 @@ def gerarResposta(idFicha:int):
          # user_prompt = f"Trabalho na área de { item[4] } na minha empresa. Trabalho com informações sensíveis de meus clientes, e acabei encontrando um possível risco para \
          # para minha empresa. Esse risco é {item[2]} e já tenho o plano {item[1]} para solucinar esse risco. Como devo prosseguir, quais são os passos para tratar esse risco? \
          # <important>Sua resposta não deve ser montada com elementos html. Começe sua resposta explicando o plano e em seguida montando os passos</important>"
+         
+         # exemplo_resposta = (
+         #    "A empresa precisa garantir que nenhum dado pessoal seja coletado sem o consentimento claro do titular. "
+         #    "Para isso, é necessário criar formulários específicos que expliquem de forma simples quais dados serão coletados e para qual finalidade. "
+         #    "Esses formulários devem ser aplicados antes de qualquer coleta, e a equipe responsável precisa estar preparada para orientar os titulares nesse processo. "
+         #    "Além disso, o sistema da empresa deve ser ajustado para impedir o cadastro de dados sem a confirmação do consentimento, o que pode ser feito por meio de uma verificação obrigatória. "
+         #    "Todos os registros de consentimento devem ser armazenados de forma segura, garantindo que a empresa possa comprovar que seguiu as exigências da LGPD. "
+         #    "Com essas ações, o risco de coleta irregular é reduzido e a empresa demonstra comprometimento com a privacidade dos usuários."
+         # )
 
-         user_prompt = f"""Área responsável: {item[4]}.  
+         # user_prompt = f"""
+         #                   Área responsável: {item[4]}.  
+         #                   Risco identificado: {item[2]}.  
+         #                   Plano de mitigação em andamento: {item[1]}.
+                           
+         #                   Com base nessas informações, elabore uma diretriz objetiva e impessoal, descrevendo como proceder na tratativa desse risco. 
+         #                   A linguagem deve ser imperativa, com tom normativo e institucional. 
+         #                   A resposta não deve ser dirigida a uma pessoa ou conter instruções pessoais. 
+         #                   Tenha como base para sua resposta a descrição do plano, o risco identificado e a área.
+         #                   Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. 
+         #                   Sua resposta deve ser um texto corrido e NÃO deve utilizar estrutura de passo a passo ou separar tópicos por numeração.
+         #                   Não utilize o caractére especial '*'
+         #                """
+         
+         user_prompt = f"""
+                           Área responsável: {item[4]}.  
                            Risco identificado: {item[2]}.  
-                           Plano de mitigação em andamento: "{item[1]}".
-                           Tempo entre execução desse plano: "{item[6]}".
+                           Plano de mitigação em andamento: {item[1]}.
 
-                           Com base nessas informações, elabore uma diretriz objetiva e impessoal, descrevendo como proceder na tratativa desse risco. A linguagem deve ser imperativa, com tom normativo e institucional. A resposta não deve ser dirigida a uma pessoa ou conter instruções pessoais. Inicie descrevendo a abordagem prevista no plano e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. Use texto corrido, com no máximo quebras de linha simples para separação de trechos.
+                           Explique o plano utilizando a seguinte descrição:
+                           {item[7]}
 
+                           Explique o cada item da Etapas para Implementação e como ela é correlacionada ao plano em andamento.
+                           Explique também por que essas etapas são relevantes para mitigar o risco identificado.
+                           Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. 
+                           Sua resposta deve ser um texto corrido e NÃO deve utilizar estrutura de passo a passo ou separar tópicos por numeração.
+                           Não utilize o caractére especial '*'
                         """
+         # user_prompt = f"""
+         #                   Dado o risco {item[2]}, crie uma descrição completa do plano {item[1]},
+         #                   baseada no sistema jurídico brasileiro, porém escrito de forma didática para guiar os colaboradores 
+         #                   das empresas para a correta implementação dos planos de ação. Para tanto, seja bem detalhado e utilize palavras fora do 
+         #                   jargão jurídico, formal porém não tão técnico, de modo que a linguagem possa ser compreendida pelos colaboradores, 
+         #                   criando descrições completas. Responda na seguinte estrutura:
 
-         data = criarBodyRequestAI(user_prompt, item[3])
+         #                   EXEMPLO:
+         #                      Objetivo: 'explicação do plano'
+         #                      Passos: 'separação de passo a passo, explicando a sua importancia para resolução do risco em questão'
+
+         #               """
+         # exemplo_area = "Regulatórios"
+         # exemplo_risco = "Coleta de dados pessoais sem consentimento do titular"
+         # exemplo_titulo = "Implementação de política de consentimento"
+         # exemplo_descricao = (
+         #    "Objetivo: Garantir que todos os dados pessoais sejam coletados com o consentimento expresso do titular. "
+         #    "Passo a passo: 1. Criar formulários de consentimento. 2. Treinar equipe para uso dos formulários. "
+            # "3. Inserir verificação obrigatória de consentimento no sistema. 4. Armazenar registros de consentimento."
+         # )
+
+
+         # user_prompt = f"""
+         #                   Exemplo de entrada:
+
+         #                   Área afetada: {exemplo_area}
+         #                   Risco identificado: {exemplo_risco}
+         #                   Plano proposto: {exemplo_titulo}
+         #                   Descrição do plano: {exemplo_descricao}
+
+         #                   Resposta esperada:
+         #                   {exemplo_resposta}
+
+         #                   Agora gere um plano de ação para o seguinte caso.
+
+         #                   Área afetada: {item[4]}
+         #                   Risco identificado: {item[2]}
+         #                   Plano proposto: {item[1]}
+         #                   Descrição do plano: {item[7]}
+
+         #                   Com base nessas informações, elabore um plano de ação completo em texto corrido.
+         #                   Tenha como base para sua resposta a descrição do plano, o risco identificado e formule sua resposta com base nesses aspectos. 
+         #                   A resposta deve explicar de forma clara o que deve ser feito, como e por quê, sem usar tópicos, listas ou marcações. 
+         #                   Evite vocabulário jurídico e explique como se estivesse orientando uma equipe de gestão comum.
+         #                   Formule respostas curtas.
+         #                """
+         
+         data = criarBodyRequestAI(user_prompt, item[7])
+
+         print("USER PROMPT: ", data.prompt)
+         print("SYSTEM PROMPT: ", data.system_prompt)
+
+         # client = OpenAI(
+         # base_url="https://openrouter.ai/api/v1",
+         # api_key="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",
+         # )
+         # completion = client.chat.completions.create(
+         #    model="deepseek/deepseek-prover-v2:free",
+         #    messages=[
+         #       {
+         #          "role": "system",
+         #          "content": data.system_prompt
+         #       },
+         #       {
+         #          "role": "user",
+         #          "content": data.prompt
+         #       },
+
+         #    ],
+         #    extra_body={
+         #       "top_k": data.options.top_k,
+         #    },
+         #    max_tokens= 600,
+         #    top_p=.6,
+         #    stream=False,
+         #    temperature=.2
+         # )
 
          response = requests.post(url, headers=basicHeader, json= data.to_dict())
 
          print('Response:', response.json())
+         # print('Response:', completion.choices[0].message.content)
 
          update_secao_resposta = "UPDATE \"DPrivacy\".secao_plano_ficha_resposta SET resposta = %s, data_fim = now() WHERE id = %s"
 
          cur.execute(update_secao_resposta, (response.json()['response'], id_inserido, ))
+
+         # cur.execute(update_secao_resposta, (completion.choices[0].message.content, id_inserido, ))
 
          conn.commit()
 
@@ -177,7 +310,13 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
       if(body.seguranca != None):
          update += " seguranca = %s, "
 
-      update += " finalizado = true "
+      if(body.retencao != None):
+         update += " retencao = %s, "
+
+      if(body.revisao != None):
+         update += " revisao = %s, "
+
+      update += " finalizado = true, data_finalizado = now() "
 
       # if(update[len(update)-2] == ','):
       #    print(update[len(update)-2])
@@ -208,7 +347,13 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
          if(body.seguranca != None):
             params.append(body.seguranca)
-            
+         
+         if(body.retencao != None):
+            params.append(body.retencao)
+
+         if(body.revisao != None):
+            params.append(body.revisao)
+
          cur = conn.cursor()
 
          cur.execute(update, params)
@@ -241,29 +386,29 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
 
          ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         if(body.retencao):
-            print("Entrou RL_RETENCAO")
-            delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
+         # if(body.retencao):
+         #    print("Entrou RL_RETENCAO")
+         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
 
-            cur.execute(delete_dados, (body.idFicha,))
+         #    cur.execute(delete_dados, (body.idFicha,))
 
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
 
-            for retencao in body.retencao:
-               cur.execute(insert_dados, (body.idFicha, retencao))
+         #    for retencao in body.retencao:
+         #       cur.execute(insert_dados, (body.idFicha, retencao))
 
 
          ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         if(body.revisao):
-            print("Entrou RL_REVISAO")
-            delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
+         # if(body.revisao):
+         #    print("Entrou RL_REVISAO")
+         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
 
-            cur.execute(delete_dados, (body.idFicha,))
+         #    cur.execute(delete_dados, (body.idFicha,))
 
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
 
-            for revisao in body.revisao:
-               cur.execute(insert_dados, (body.idFicha, revisao))
+         #    for revisao in body.revisao:
+         #       cur.execute(insert_dados, (body.idFicha, revisao))
 
          ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
          # if(body.seguranca):
@@ -314,7 +459,13 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
       if(body.seguranca != None):
          insert += " seguranca, "
 
-      insert += " fk_usuario, finalizado "
+      if(body.retencao != None):
+         insert += " retencao, "
+
+      if(body.revisao != None):
+         insert += " revisao, "
+
+      insert += " fk_usuario, finalizado, data_finalizado "
 
       insert += " ) VALUES ( "
 
@@ -335,8 +486,14 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
       if(body.seguranca != None):
          insert += " %s, "
+
+      if(body.retencao != None):
+         insert += " %s, "
+
+      if(body.revisao != None):
+         insert += " %s, "
       
-      insert += " %s, %s "
+      insert += " %s, %s, %s "
 
 
       insert += " ) RETURNING id"
@@ -362,9 +519,16 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
          if(body.seguranca != None):
             params.append(body.seguranca)
+
+         if(body.retencao != None):
+            params.append(body.retencao)
+
+         if(body.revisao != None):
+            params.append(body.revisao)
             
          params.append(body.usuario)
          params.append(True)
+         params.append("now()")
 
          cur = conn.cursor()
 
@@ -390,21 +554,21 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
 
          ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         if(body.retencao):
-            print("Entrou RL_RETENCAO")
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
+         # if(body.retencao):
+         #    print("Entrou RL_RETENCAO")
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
 
-            for retencao in body.retencao:
-               cur.execute(insert_dados, (id_inserido, retencao))
+         #    for retencao in body.retencao:
+         #       cur.execute(insert_dados, (id_inserido, retencao))
 
 
          ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         if(body.revisao):
-            print("Entrou RL_REVISAO")
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
+         # if(body.revisao):
+         #    print("Entrou RL_REVISAO")
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
 
-            for revisao in body.revisao:
-               cur.execute(insert_dados, (id_inserido, revisao))
+         #    for revisao in body.revisao:
+         #       cur.execute(insert_dados, (id_inserido, revisao))
 
          ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
          # if(body.seguranca):
@@ -460,6 +624,12 @@ def atualizarFicha(body:FichaInventarioCadastro):
       if(body.seguranca != None):
          update += " seguranca = %s, "
 
+      if(body.retencao != None):
+         update += " retencao = %s, "
+
+      if(body.revisao != None):
+         update += " revisao = %s, "
+
       if(update[len(update)-2] == ','):
          print(update[len(update)-2])
          update = replacer(update, '', len(update)-2)
@@ -489,6 +659,12 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
          if(body.seguranca != None):
             params.append(body.seguranca)
+
+         if(body.retencao != None):
+            params.append(body.retencao)
+
+         if(body.revisao != None):
+            params.append(body.revisao)
             
          cur = conn.cursor()
 
@@ -522,29 +698,29 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
 
          ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         if(body.retencao):
-            print("Entrou RL_RETENCAO")
-            delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
+         # if(body.retencao):
+         #    print("Entrou RL_RETENCAO")
+         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
 
-            cur.execute(delete_dados, (body.idFicha,))
+         #    cur.execute(delete_dados, (body.idFicha,))
 
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
 
-            for retencao in body.retencao:
-               cur.execute(insert_dados, (body.idFicha, retencao))
+         #    for retencao in body.retencao:
+         #       cur.execute(insert_dados, (body.idFicha, retencao))
 
 
          ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         if(body.revisao):
-            print("Entrou RL_REVISAO")
-            delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
+         # if(body.revisao):
+         #    print("Entrou RL_REVISAO")
+         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
 
-            cur.execute(delete_dados, (body.idFicha,))
+         #    cur.execute(delete_dados, (body.idFicha,))
 
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
 
-            for revisao in body.revisao:
-               cur.execute(insert_dados, (body.idFicha, revisao))
+         #    for revisao in body.revisao:
+         #       cur.execute(insert_dados, (body.idFicha, revisao))
 
          ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
          # if(body.seguranca):
@@ -596,6 +772,12 @@ def atualizarFicha(body:FichaInventarioCadastro):
       if(body.seguranca != None):
          insert += " seguranca, "
 
+      if(body.retencao != None):
+         insert += " retencao, "
+      
+      if(body.revisao != None):
+         insert += " revisao, "
+
       insert += " fk_usuario "
 
       insert += " ) VALUES ( "
@@ -616,6 +798,12 @@ def atualizarFicha(body:FichaInventarioCadastro):
          insert += " %s, "
 
       if(body.seguranca != None):
+         insert += " %s, "
+
+      if(body.retencao != None):
+         insert += " %s, "
+      
+      if(body.revisao != None):
          insert += " %s, "
       
       insert += " %s "
@@ -644,6 +832,12 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
          if(body.seguranca != None):
             params.append(body.seguranca)
+
+         if(body.retencao != None):
+            params.append(body.retencao)
+
+         if(body.revisao != None):
+            params.append(body.revisao)
             
          params.append(body.usuario)
 
@@ -671,21 +865,21 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
 
          ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         if(body.retencao):
-            print("Entrou RL_RETENCAO")
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
+         # if(body.retencao):
+         #    print("Entrou RL_RETENCAO")
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
 
-            for retencao in body.retencao:
-               cur.execute(insert_dados, (id_inserido, retencao))
+         #    for retencao in body.retencao:
+         #       cur.execute(insert_dados, (id_inserido, retencao))
 
 
          ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         if(body.revisao):
-            print("Entrou RL_REVISAO")
-            insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
+         # if(body.revisao):
+         #    print("Entrou RL_REVISAO")
+         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
 
-            for revisao in body.revisao:
-               cur.execute(insert_dados, (id_inserido, revisao))
+         #    for revisao in body.revisao:
+         #       cur.execute(insert_dados, (id_inserido, revisao))
 
          ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
          # if(body.seguranca):
@@ -737,13 +931,13 @@ def listarPlanosRedigindo(id_ficha):
    with conn.cursor() as cur:
       cur = conn.cursor()
 
-      select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro, fi.armazenamento, fi.exclusao, fi.compartilhamento_terceiros, fi.transferencia_internacional, seguranca FROM \"DPrivacy\".ficha_inventario fi " +
+      select = cur.execute(f" SELECT fi.id, fi.area, fi.finalizado, fi.data_cadastro, fi.armazenamento, fi.exclusao, fi.compartilhamento_terceiros, fi.transferencia_internacional, fi.seguranca, fi.retencao, fi.revisao FROM \"DPrivacy\".ficha_inventario fi " +
                            " WHERE fi.id = %s ", [id_ficha]).fetchone()
       
       listaOperacoes = []
       # listaSeguranca = []
-      listaRevisao = []
-      listaRetencao = []
+      # listaRevisao = []
+      # listaRetencao = []
       listaFinalidade = []
       listaDadoColetado = []
       
@@ -759,17 +953,17 @@ def listarPlanosRedigindo(id_ficha):
          listaFinalidade.append(row[0])
          
       
-      selectretencao = cur.execute(f" SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao " +
-                           " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
-      for row in selectretencao:
-         listaRetencao.append(row[0])
+      # selectretencao = cur.execute(f" SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao " +
+      #                      " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
+      # for row in selectretencao:
+      #    listaRetencao.append(row[0])
       
 
 
-      selectrevisao = cur.execute(f" SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao " +
-                           " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
-      for row in selectrevisao:
-         listaRevisao.append(row[0])
+      # selectrevisao = cur.execute(f" SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao " +
+      #                      " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
+      # for row in selectrevisao:
+      #    listaRevisao.append(row[0])
       
 
 
@@ -798,8 +992,8 @@ def listarPlanosRedigindo(id_ficha):
                                  tipoOperacao=listaOperacoes,
                                  dadosColetados=listaDadoColetado,
                                  finalidade=listaFinalidade,
-                                 revisao=listaRevisao,
-                                 retencao=listaRetencao,
+                                 revisao=select[10],
+                                 retencao=select[9],
                                  seguranca=select[8])
          
       else:
@@ -809,6 +1003,140 @@ def listarPlanosRedigindo(id_ficha):
       return response
    
 
+def selectProcuraSecoes(ficha:FichaResponse):
+   with conn.cursor() as cur:
+      cur = conn.cursor()
+      #####-----------------PROCURANDO SEÇÕES-------------------####
+      select_plano_secao = """
+            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
+            JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
+            JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
+            JOIN \"DPrivacy\".inventario_operacoes io ON io.id = ir.fk_inventario
+            WHERE io.area = %s
+            AND io.tipo_operacao = ANY(%s) 
+            AND (	
+                  io.dados_coletados = ANY(%s)
+                  OR  io.finalidade = ANY(%s) 
+                  OR io.revisao = %s
+                  OR io.retencao = %s
+                  OR io.seguranca = %s 
+                  OR io.armazenamento = %s
+                  OR io.exclusao = %s
+                  OR io.compartilhamento_terceiros = %s
+                  OR io.transferencia_internacional = %s
+               )
+            GROUP BY pl.id, r.riscos_dados_pessoais
+            order by qtd desc
+      """
+
+      params = []
+
+      params.append(ficha.area)
+      params.append(ficha.tipoOperacao)
+      params.append(ficha.dadosColetados)
+      params.append(ficha.finalidade)
+      params.append(ficha.revisao)
+      params.append(ficha.retencao)
+      params.append(ficha.seguranca)
+      params.append(ficha.armazenamento)
+      params.append(ficha.exclusao)
+      params.append(ficha.compartilhamentoTerceiros)
+      params.append(ficha.transferenciaInternacional)
+
+      select = cur.execute(select_plano_secao, params).fetchall()
+
+      if(len(select) > 1):
+         return select
+      
+
+      select_plano_secao = """
+            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
+            JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
+            JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
+            JOIN \"DPrivacy\".inventario_operacoes io ON io.id = ir.fk_inventario
+            WHERE io.area = %s
+            AND io.dados_coletados = ANY(%s) 
+            AND (	
+                  io.tipo_operacao = ANY(%s)
+                  OR  io.finalidade = ANY(%s) 
+                  OR io.revisao = %s
+                  OR io.retencao = %s
+                  OR io.seguranca = %s 
+                  OR io.armazenamento = %s
+                  OR io.exclusao = %s
+                  OR io.compartilhamento_terceiros = %s
+                  OR io.transferencia_internacional = %s
+               )
+            GROUP BY pl.id, r.riscos_dados_pessoais
+            order by qtd desc
+      """
+
+      params = []
+
+      params.append(ficha.area)
+      params.append(ficha.dadosColetados)
+      params.append(ficha.tipoOperacao)
+      params.append(ficha.finalidade)
+      params.append(ficha.revisao)
+      params.append(ficha.retencao)
+      params.append(ficha.seguranca)
+      params.append(ficha.armazenamento)
+      params.append(ficha.exclusao)
+      params.append(ficha.compartilhamentoTerceiros)
+      params.append(ficha.transferenciaInternacional)
+
+      select = cur.execute(select_plano_secao, params).fetchall()
+
+      if(len(select) > 1):
+         return select
+      
+
+      select_plano_secao = """
+            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
+            JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
+            JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
+            JOIN \"DPrivacy\".inventario_operacoes io ON io.id = ir.fk_inventario
+            WHERE io.area = %s
+            AND io.finalidade = ANY(%s) 
+            AND (	
+                  io.tipo_operacao = ANY(%s)
+                  OR  io.dados_coletados = ANY(%s) 
+                  OR io.revisao = %s
+                  OR io.retencao = %s
+                  OR io.seguranca = %s 
+                  OR io.armazenamento = %s
+                  OR io.exclusao = %s
+                  OR io.compartilhamento_terceiros = %s
+                  OR io.transferencia_internacional = %s
+               )
+            GROUP BY pl.id, r.riscos_dados_pessoais
+            order by qtd desc
+      """
+
+      params = []
+
+      params.append(ficha.area)
+      params.append(ficha.finalidade)
+      params.append(ficha.tipoOperacao)
+      params.append(ficha.dadosColetados)
+      params.append(ficha.revisao)
+      params.append(ficha.retencao)
+      params.append(ficha.seguranca)
+      params.append(ficha.armazenamento)
+      params.append(ficha.exclusao)
+      params.append(ficha.compartilhamentoTerceiros)
+      params.append(ficha.transferenciaInternacional)
+
+      select = cur.execute(select_plano_secao, params).fetchall()
+
+      if(len(select) > 1):
+         return select
+         
+
+
 
 @api.post('/criar_secoes')
 def criarSecoesFicha(body:SecaoFichaRequest):
@@ -816,14 +1144,14 @@ def criarSecoesFicha(body:SecaoFichaRequest):
 
    select_dados_coletados = f"SELECT dado_coletado FROM \"DPrivacy\".rl_ficha_dados_coletados WHERE fk_ficha = {body.idFicha} "
    select_finalidade = f"SELECT finalidade FROM \"DPrivacy\".rl_ficha_finalidade WHERE fk_ficha = {body.idFicha} "
-   select_retencao = f"SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = {body.idFicha} "
-   select_revisao = f"SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = {body.idFicha} "
+   # select_retencao = f"SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = {body.idFicha} "
+   # select_revisao = f"SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = {body.idFicha} "
    select_tipo_operacao = f"SELECT tipo_operacao FROM \"DPrivacy\".rl_ficha_tipo_operacao WHERE fk_ficha = {body.idFicha} "
 
    listDadosColetados = []
    listFinalidade = []
-   listRetencao = []
-   listRevisao = []
+   # listRetencao = []
+   # listRevisao = []
    listTipoOperacao = []
 
    with conn.cursor() as cur:
@@ -844,16 +1172,16 @@ def criarSecoesFicha(body:SecaoFichaRequest):
          listFinalidade.append(item[0])
 
       #RETENÇÃO#
-      select = cur.execute(select_retencao).fetchall()
+      # select = cur.execute(select_retencao).fetchall()
 
-      for item in select:
-         listRetencao.append(item[0])
+      # for item in select:
+      #    listRetencao.append(item[0])
 
       #REVISÃO#
-      select = cur.execute(select_revisao).fetchall()
+      # select = cur.execute(select_revisao).fetchall()
 
-      for item in select:
-         listRevisao.append(item[0])
+      # for item in select:
+      #    listRevisao.append(item[0])
 
       #TIPO OPERAÇÃO#
       select = cur.execute(select_tipo_operacao).fetchall()
@@ -861,63 +1189,21 @@ def criarSecoesFicha(body:SecaoFichaRequest):
       for item in select:
          listTipoOperacao.append(item[0])
 
-      #####---------------------------------------------------------------####
-
-
       #####-----------------PREENCHENDO A FICHA-------------------####
-      select_ficha = f"SELECT id, armazenamento, exclusao, compartilhamento_terceiros, transferencia_internacional, area, seguranca FROM \"DPrivacy\".ficha_inventario WHERE id = {body.idFicha} "
+      select_ficha = f"SELECT id, armazenamento, exclusao, compartilhamento_terceiros, transferencia_internacional, area, seguranca, retencao, revisao FROM \"DPrivacy\".ficha_inventario WHERE id = {body.idFicha} "
       
       select = cur.execute(select_ficha).fetchone()
       print(select)
       ficha = FichaResponse(id=select[0], armazenamento=select[1], exclusao=select[2], compartilhamentoTerceiros=select[3], transferenciaInternacional=select[4], 
-                            area=select[5], seguranca=select[6], dadosColetados=None, dataCadastro=None, finalidade=None, finalizado=None, retencao=None,
-                            revisao=None, tipoOperacao=None)
-      #####--------------------------------------------------------####
+                            area=select[5], seguranca=select[6], dadosColetados=listDadosColetados, dataCadastro=None, finalidade=listFinalidade, finalizado=None, retencao=select[7],
+                            revisao=select[8], tipoOperacao=listTipoOperacao)
       
+      
+   select = selectProcuraSecoes(ficha)
 
-
-
-      #####-----------------CRIANDO SEÇÕES-------------------####
-      select_plano_secao = """
-            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
-            JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
-            JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
-            JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
-            JOIN \"DPrivacy\".inventario_operacoes io ON io.id = ir.fk_inventario
-            WHERE io.area = %s
-            AND io.tipo_operacao = ANY(%s) 
-            AND (	
-                  io.dados_coletados = ANY(%s)
-                  OR  io.finalidade = ANY(%s) 
-                  OR io.revisao = ANY(%s)
-                  OR io.retencao = ANY(%s)
-                  OR io.seguranca = %s 
-                  OR io.armazenamento = %s
-                  OR io.exclusao = %s
-                  OR io.compartilhamento_terceiros = %s
-                  OR io.transferencia_internacional = %s
-               )
-            GROUP BY pl.id, r.riscos_dados_pessoais
-            order by qtd desc
-      """
-
-      params = []
-
-      params.append(ficha.area)
-      params.append(listTipoOperacao)
-      params.append(listDadosColetados)
-      params.append(listFinalidade)
-      params.append(listRevisao)
-      params.append(listRetencao)
-      params.append(ficha.seguranca)
-      params.append(ficha.armazenamento)
-      params.append(ficha.exclusao)
-      params.append(ficha.compartilhamentoTerceiros)
-      params.append(ficha.transferenciaInternacional)
-
-      select = cur.execute(select_plano_secao, params).fetchall()
-
-
+   with conn.cursor() as cur:
+      cur = conn.cursor()
+   
       insert_secao = "INSERT INTO \"DPrivacy\".secao_plano_ficha(secao, fk_ficha, plano, risco, tratativa) VALUES (%s, %s, %s, %s, %s)"
 
       secao = 1
@@ -925,7 +1211,7 @@ def criarSecoesFicha(body:SecaoFichaRequest):
          cur.execute(insert_secao, (secao, ficha.id, item[1], item[0], item[2], ))
          secao += 1
 
-      conn.commit()
+   conn.commit()
 
    gerarResposta(ficha.id)
 
@@ -941,7 +1227,7 @@ def buscarPlanosConcluidos(id_usuario):
                               JOIN \"DPrivacy\".secao_plano_ficha sfp ON sfp.fk_ficha = fi.id
                               WHERE fi.finalizado IS TRUE AND fi.fk_usuario = %s 
                               GROUP BY 1,2,3,4
-                              ORDER BY fi.data_cadastro DESC"""
+                              ORDER BY fi.data_finalizado DESC, fi.id DESC"""
       
 
 
