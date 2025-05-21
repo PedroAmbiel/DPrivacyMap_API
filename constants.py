@@ -1,4 +1,4 @@
-BD_CONN = 'dbname=DPrivacyMap user=quarkus password=quarkus host=localhost port=61465'
+BD_CONN = 'dbname=DPrivacyMap user=quarkus password=quarkus host=localhost port=62465'
 BD_USER = 'quarkus'
 BD_DBNAME = 'quarkus'
 BD_PASSWORD = 'quarkus'

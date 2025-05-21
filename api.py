@@ -145,22 +145,7 @@ def gerarResposta(idFicha:int):
          #                   Não utilize o caractére especial '*'
          #                """
          
-         user_prompt = f"""
-                           Área responsável: {item[4]}.  
-                           Risco identificado: {item[2]}.  
-                           Plano de mitigação em andamento: {item[1]}.
 
-                           Explique o plano utilizando a seguinte descrição:
-                           {item[7]}
-
-                           Explique o cada item da Etapas para Implementação e como ela é correlacionada ao plano em andamento.
-                           Explique também por que essas etapas são relevantes para mitigar o risco identificado.
-                           Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
-                           Ao informar o topico rodeal-lo em negrito <b></b> e dois pontos ':'.
-                           Sua resposta não deve passar de dois parágrafos. 
-                           Sua resposta deve manter o seguinte padrão de estrutura:
-                              Quando falar de um novo tópico da descrição do plano, quebrar a linha com '\\n' e iniciar o tópico com '-'
-                        """
          # user_prompt = f"""
          #                   Dado o risco {item[2]}, crie uma descrição completa do plano {item[1]},
          #                   baseada no sistema jurídico brasileiro, porém escrito de forma didática para guiar os colaboradores 
@@ -206,6 +191,82 @@ def gerarResposta(idFicha:int):
          #                   A resposta deve explicar de forma clara o que deve ser feito, como e por quê, sem usar tópicos, listas ou marcações. 
          #                   Evite vocabulário jurídico e explique como se estivesse orientando uma equipe de gestão comum.
          #                   Formule respostas curtas.
+         #                """
+
+
+# como ela é relacionada ao plano em andamento
+         user_prompt = f"""
+                  Área responsável: {item[4]}.  
+                  Risco identificado: {item[2]}.  
+                  Plano de mitigação em andamento: {item[1]}.
+
+                  Explique o plano utilizando a seguinte descrição:
+                  {item[7]}
+
+                  Explique cada item da Etapas para Implementação e dê sugestões de como essas etapas devem ser aplicadas em um cenário real.
+                  Explique também por que essas etapas são relevantes para mitigar o risco identificado.
+                  Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
+                  
+                  Sua resposta deve manter o seguinte padrão de estrutura:
+                     Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                     Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
+                     Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
+                     Não indique negrito utilizando '*'.
+                     Sua resposta não deve passar de dois parágrafos. 
+                     Utilize <br/> para quebra de linha.
+
+                     Exemplo de saída esperada:
+
+                        <b>Objetivo:</b> 'Descreva o objetivo'
+                        
+                        <br/> <b>Etapas para Implementação:</b>
+
+                        <ul> 
+                        <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
+                        <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
+                        <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
+                        </ul>
+               """
+
+         # user_prompt = f"""
+         #                Quero que você gere uma explicação baseada nos seguintes dados:
+
+         #                Área responsável: {item[4]}.
+
+         #                Risco identificado: {item[2]}.
+
+         #                Plano de mitigação em andamento: {item[1]}.
+
+         #                Descrição detalhada do plano: {item[7]}.
+
+         #                Siga a seguinte estrutura:
+
+         #                Inicie explicando a abordagem prevista no plano de mitigação (sem iniciar com "e").
+
+         #                Em seguida, apresente a sequência de ações recomendadas, explicando cada uma das etapas de implementação, 
+         #                como elas se correlacionam ao plano em andamento e por que são relevantes para mitigar o risco identificado.
+
+         #                Use elementos HTML conforme abaixo:
+
+         #                Todo título deve estar envolvido com a tag <b></b>.
+
+         #                Cada novo tópico da descrição do plano deve iniciar com - e estar dentro de uma estrutura de lista em HTML (<ul><li>...</li></ul>).
+
+         #                Quando mudar de tópico na descrição do plano, inicie com -.
+
+         #                A resposta deve ter no máximo dois parágrafos.
+
+         #                Exemplo de saída esperada:
+
+         #                <b>Objetivo:</b> 'Insira o nome do objetivo aqui'
+                        
+         #                <br/> <b>Etapas para Implementação:</b>
+
+         #                <ul> 
+         #                <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
+         #                <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
+         #                <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
+         #                </ul>
          #                """
          
          data = criarBodyRequestAI(user_prompt, item[7])
