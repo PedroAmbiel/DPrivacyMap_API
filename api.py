@@ -74,7 +74,6 @@ def criarBodyRequestAI(userPrompt, tratativa):
                Sua missão é analisar planos de ação com base em riscos identificados e fornecer explicações claras, simples e objetivas. 
                Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
                Nunca responda diretamente à pergunta.
-               Não alongue suas respostas para mais de 300 palavras.
                """
 
    data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
@@ -156,9 +155,11 @@ def gerarResposta(idFicha:int):
 
                            Explique o cada item da Etapas para Implementação e como ela é correlacionada ao plano em andamento.
                            Explique também por que essas etapas são relevantes para mitigar o risco identificado.
-                           Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. 
-                           Sua resposta deve ser um texto corrido e NÃO deve utilizar estrutura de passo a passo ou separar tópicos por numeração.
-                           Não utilize o caractére especial '*'
+                           Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                           Ao informar o topico rodeal-lo em negrito <b></b> e dois pontos ':'.
+                           Sua resposta não deve passar de dois parágrafos. 
+                           Sua resposta deve manter o seguinte padrão de estrutura:
+                              Quando falar de um novo tópico da descrição do plano, quebrar a linha com '\\n' e iniciar o tópico com '-'
                         """
          # user_prompt = f"""
          #                   Dado o risco {item[2]}, crie uma descrição completa do plano {item[1]},
@@ -1008,7 +1009,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
       cur = conn.cursor()
       #####-----------------PROCURANDO SEÇÕES-------------------####
       select_plano_secao = """
-            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            SELECT  STRING_AGG(DISTINCT r.riscos_dados_pessoais, ','), pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
             JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
             JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
             JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
@@ -1026,7 +1027,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
                   OR io.compartilhamento_terceiros = %s
                   OR io.transferencia_internacional = %s
                )
-            GROUP BY pl.id, r.riscos_dados_pessoais
+            GROUP BY pl.id, pl.titulo
             order by qtd desc
       """
 
@@ -1051,7 +1052,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
       
 
       select_plano_secao = """
-            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            SELECT STRING_AGG(DISTINCT r.riscos_dados_pessoais, ','), pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
             JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
             JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
             JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
@@ -1069,7 +1070,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
                   OR io.compartilhamento_terceiros = %s
                   OR io.transferencia_internacional = %s
                )
-            GROUP BY pl.id, r.riscos_dados_pessoais
+            GROUP BY pl.id, pl.titulo
             order by qtd desc
       """
 
@@ -1094,7 +1095,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
       
 
       select_plano_secao = """
-            SELECT DISTINCT r.riscos_dados_pessoais, pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
+            SELECT STRING_AGG(DISTINCT r.riscos_dados_pessoais, ','), pl.titulo, pl.detalhes, count(pl.id) as qtd FROM \"DPrivacy\".planos pl
             JOIN \"DPrivacy\".rl_riscos_planos rp ON rp.fk_plano = pl.id
             JOIN \"DPrivacy\".rl_inventario_riscos ir ON ir.fk_risco = rp.fk_risco
             JOIN \"DPrivacy\".riscos r ON r.id = ir.fk_risco
@@ -1112,7 +1113,7 @@ def selectProcuraSecoes(ficha:FichaResponse):
                   OR io.compartilhamento_terceiros = %s
                   OR io.transferencia_internacional = %s
                )
-            GROUP BY pl.id, r.riscos_dados_pessoais
+            GROUP BY pl.id, pl.titulo
             order by qtd desc
       """
 
