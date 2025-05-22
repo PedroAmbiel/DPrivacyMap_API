@@ -40,7 +40,7 @@ basicHeader = {
 
 url = 'http://localhost:11434/api/generate'
 
-def criarBodyRequestAI(userPrompt, tratativa):
+def criarBodyRequestAI(userPrompt):
    # sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
 
    # sys_prompt = f"Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Sempre formule respostas curtas. Utilize o contexto para complementar a resposta <context>{tratativa}</context>"
@@ -70,13 +70,13 @@ def criarBodyRequestAI(userPrompt, tratativa):
    #                Suas respostas devem utilizar o seguinte contexto: {tratativa}
    #               """
    
-   sys_prompt = f"""Você é um advogado especialista em LGPD, com foco em ajudar empresas a entender e aplicar práticas de proteção de dados pessoais. 
-               Sua missão é analisar planos de ação com base em riscos identificados e fornecer explicações claras, simples e objetivas. 
+   sys_prompt = f"""
                Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
                Nunca responda diretamente à pergunta.
+               Mantenha sempre as respostas com menos de 300 palavras.
                """
 
-   data = AiBody(prompt=userPrompt, system_prompt=sys_prompt)
+   data = AiBody(prompt=userPrompt, system=sys_prompt)
 
    return data
 
@@ -101,12 +101,31 @@ def gerarResposta(idFicha:int):
       
       cur = conn.cursor()
 
+      select_todos_riscos = cur.execute(f" SELECT DISTINCT s.risco FROM \"DPrivacy\".secao_plano_ficha s " +
+                           " LEFT JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha "
+                           " LEFT JOIN \"DPrivacy\".planos p ON p.titulo = s.plano " +
+                           " WHERE s.fk_ficha = %s ", (idFicha, )).fetchall()
+
       select = cur.execute(f" SELECT s.secao, s.plano, s.risco, s.tratativa, fi.area, s.id, p.tempo_dias, p.detalhe_planos FROM \"DPrivacy\".secao_plano_ficha s " +
-                           " JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha "
-                           " JOIN \"DPrivacy\".planos p ON p.titulo = s.plano " +
+                           " LEFT JOIN \"DPrivacy\".ficha_inventario fi ON fi.id = s.fk_ficha "
+                           " LEFT JOIN \"DPrivacy\".planos p ON p.titulo = s.plano AND s.plano = \'Resumo Geral\' " +
                            " WHERE s.fk_ficha = %s "
                            " ORDER BY s.secao", (idFicha, )).fetchall()
+      
+      riscos_identificados = ""
 
+      for risco in select_todos_riscos:
+         riscos_identificados += risco[0] + ", "
+
+      user_prompt = f"""
+                     Minha empresa está iniciando trabalhos com coleta de dados sensíveis.
+                     Os riscos identificados são: {riscos_identificados}.
+                     De acordo com a LGPD (Lei Geral de Proteção de Dados), o que devo fazer para tratar esses riscos? 
+                     """
+      
+
+      data = criarBodyRequestAI(user_prompt)
+      secao = 1
       for item in select:
 
          update_secao_data = "INSERT INTO \"DPrivacy\".secao_plano_ficha_resposta (data_inicio, fk_secao_plano_ficha) VALUES ( now(), %s ) RETURNING id"
@@ -195,125 +214,130 @@ def gerarResposta(idFicha:int):
 
 
 # como ela é relacionada ao plano em andamento
-         user_prompt = f"""
-                  Área responsável: {item[4]}.  
-                  Risco identificado: {item[2]}.  
-                  Plano de mitigação em andamento: {item[1]}.
-
-                  Explique o plano utilizando a seguinte descrição:
-                  {item[7]}
-
-                  Explique cada item da Etapas para Implementação e dê sugestões de como essas etapas devem ser aplicadas em um cenário real.
-                  Explique também por que essas etapas são relevantes para mitigar o risco identificado.
-                  Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
-                  
-                  Sua resposta deve manter o seguinte padrão de estrutura:
-                     Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
-                     Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
-                     Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
-                     Não indique negrito utilizando '*'.
-                     Sua resposta não deve passar de dois parágrafos. 
-                     Utilize <br/> para quebra de linha.
-
-                     Exemplo de saída esperada:
-
-                        <b>Objetivo:</b> 'Descreva o objetivo'
-                        
-                        <br/> <b>Etapas para Implementação:</b>
-
-                        <ul> 
-                        <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
-                        <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
-                        <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
-                        </ul>
-               """
-
          # user_prompt = f"""
-         #                Quero que você gere uma explicação baseada nos seguintes dados:
+                  # Área responsável: {item[4]}.  
+                  # Risco identificado: {item[2]}.  
+                  # Plano de mitigação em andamento: {item[1]}.
 
-         #                Área responsável: {item[4]}.
+                  # Explique o plano utilizando a seguinte descrição:
+                  # {item[7]}
 
-         #                Risco identificado: {item[2]}.
+                  # Explique cada item da Etapas para Implementação e dê sugestões de como essas etapas devem ser aplicadas em um cenário real.
+                  # Explique também por que essas etapas são relevantes para mitigar o risco identificado.
+                  # Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
+                  
+                  # Sua resposta deve manter o seguinte padrão de estrutura:
+                  #    Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                  #    Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
+                  #    Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
+                  #    Não indique negrito utilizando '*'.
+                  #    Sua resposta não deve passar de dois parágrafos. 
+                  #    Utilize <br/> para quebra de linha.
 
-         #                Plano de mitigação em andamento: {item[1]}.
+                  #    Exemplo de saída esperada:
 
-         #                Descrição detalhada do plano: {item[7]}.
-
-         #                Siga a seguinte estrutura:
-
-         #                Inicie explicando a abordagem prevista no plano de mitigação (sem iniciar com "e").
-
-         #                Em seguida, apresente a sequência de ações recomendadas, explicando cada uma das etapas de implementação, 
-         #                como elas se correlacionam ao plano em andamento e por que são relevantes para mitigar o risco identificado.
-
-         #                Use elementos HTML conforme abaixo:
-
-         #                Todo título deve estar envolvido com a tag <b></b>.
-
-         #                Cada novo tópico da descrição do plano deve iniciar com - e estar dentro de uma estrutura de lista em HTML (<ul><li>...</li></ul>).
-
-         #                Quando mudar de tópico na descrição do plano, inicie com -.
-
-         #                A resposta deve ter no máximo dois parágrafos.
-
-         #                Exemplo de saída esperada:
-
-         #                <b>Objetivo:</b> 'Insira o nome do objetivo aqui'
+                  #       <b>Objetivo:</b> 'Descreva o objetivo'
                         
-         #                <br/> <b>Etapas para Implementação:</b>
+                  #       <br/> <b>Etapas para Implementação:</b>
 
-         #                <ul> 
-         #                <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
-         #                <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
-         #                <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
-         #                </ul>
-         #                """
+                  #       <ul> 
+                  #       <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
+                  #       <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
+                  #       <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
+                  #       </ul>
+         #       """
+
+         if(secao == 1):
+            user_prompt = f"""
+                           Minha empresa está iniciando trabalhos com coleta de dados sensíveis.
+                           Os riscos identificados são: {riscos_identificados}.
+                           De acordo com a LGPD (Lei Geral de Proteção de Dados), o que devo fazer para tratar esses riscos?
+                           
+                           Responda com um texto corrido e sem estrutura de lista, não enumere os tópicos.
+                           Descreva utilizando a tag <b></b> para identificar titulos/tópicos. 
+                           Utilize HTML para gerar a estrutura de sua resposta.
+                           """
+         else:
+            user_prompt = f"""
+                           Área responsável: {item[4]}.  
+                           Risco identificado: {item[2]}.  
+
+                           O plano para tratar esse risco é {item[1]} e minha empresa utiliza os seguintes passos para tratar o problema:
+                           {item[7]}
+
+
+                           Explique o plano que será utilizado pela empresa.
+                           Adicione ao plano sugestões que melhorem a mitigar esses riscos.
+                           Caso algum desses planos não sejam seguidos, no que pode acarretar para minha empresa?
+                           
+                           Sua resposta deve manter o seguinte padrão de estrutura:
+                              Inicie descrevendo como os , sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                              Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
+                              Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
+                              Não indique negrito utilizando '*'.
+                              Sua resposta não deve passar de dois parágrafos. 
+                              Utilize <br/> para quebra de linha.
+
+                              Exemplo de saída esperada:
+
+                                 <b>Explicação do plano utilizado pela empresa:</b> 'Descreva aqui'
+                                 
+                                 <br/> <b>Riscos identificados caso a empresa não siga as etapas propostas:</b>
+
+                                 <ul> 
+                                 <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
+                                 <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
+                                 <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
+                                 </ul>
+                        """
          
-         data = criarBodyRequestAI(user_prompt, item[7])
+         data = criarBodyRequestAI(user_prompt)
 
          print("USER PROMPT: ", data.prompt)
-         print("SYSTEM PROMPT: ", data.system_prompt)
+         print("SYSTEM PROMPT: ", data.system)
 
-         # client = OpenAI(
-         # base_url="https://openrouter.ai/api/v1",
-         # api_key="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",
-         # )
-         # completion = client.chat.completions.create(
-         #    model="deepseek/deepseek-prover-v2:free",
-         #    messages=[
-         #       {
-         #          "role": "system",
-         #          "content": data.system_prompt
-         #       },
-         #       {
-         #          "role": "user",
-         #          "content": data.prompt
-         #       },
+            # client = OpenAI(
+            # base_url="https://openrouter.ai/api/v1",
+            # api_key="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",
+            # )
+            # completion = client.chat.completions.create(
+            #    model="deepseek/deepseek-prover-v2:free",
+            #    messages=[
+            #       {
+            #          "role": "system",
+            #          "content": data.system_prompt
+            #       },
+            #       {
+            #          "role": "user",
+            #          "content": data.prompt
+            #       },
 
-         #    ],
-         #    extra_body={
-         #       "top_k": data.options.top_k,
-         #    },
-         #    max_tokens= 600,
-         #    top_p=.6,
-         #    stream=False,
-         #    temperature=.2
-         # )
+            #    ],
+            #    extra_body={
+            #       "top_k": data.options.top_k,
+            #    },
+            #    max_tokens= 600,
+            #    top_p=.6,
+            #    stream=False,
+            #    temperature=.2
+            # )
+
+         # print(data.to_dict())
 
          response = requests.post(url, headers=basicHeader, json= data.to_dict())
 
          print('Response:', response.json())
-         # print('Response:', completion.choices[0].message.content)
+            # print('Response:', completion.choices[0].message.content)
 
          update_secao_resposta = "UPDATE \"DPrivacy\".secao_plano_ficha_resposta SET resposta = %s, data_fim = now() WHERE id = %s"
 
          cur.execute(update_secao_resposta, (response.json()['response'], id_inserido, ))
 
          # cur.execute(update_secao_resposta, (completion.choices[0].message.content, id_inserido, ))
-
+         secao += 1
          conn.commit()
 
-   # return response.json()['response']
+      # return response.json()['response']
 
 
 @api.post("/login")
@@ -1265,10 +1289,14 @@ def criarSecoesFicha(body:SecaoFichaRequest):
 
    with conn.cursor() as cur:
       cur = conn.cursor()
-   
+
       insert_secao = "INSERT INTO \"DPrivacy\".secao_plano_ficha(secao, fk_ficha, plano, risco, tratativa) VALUES (%s, %s, %s, %s, %s)"
 
-      secao = 1
+      cur.execute(insert_secao, (1, ficha.id, 'Resumo Geral', '', 'Explicação Geral', ))
+
+      # insert_secao = "INSERT INTO \"DPrivacy\".secao_plano_ficha(secao, fk_ficha, plano, risco, tratativa) VALUES (%s, %s, %s, %s, %s)"
+
+      secao = 2
       for item in select:
          cur.execute(insert_secao, (secao, ficha.id, item[1], item[0], item[2], ))
          secao += 1
