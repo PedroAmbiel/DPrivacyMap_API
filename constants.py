@@ -5,4 +5,4 @@ BD_PASSWORD = 'quarkus'
 BD_HOST = 'localhost'
 
 AI_URL = 'http://localhost:11434/'
-AI_MODEL = 'llama3.2:3b'
+AI_MODEL = 'qwen3:4b'
