@@ -203,12 +203,12 @@ def gerarResposta(idFicha:int):
                   Explique o plano utilizando a seguinte descrição:
                   {item[7]}
 
-                  Explique cada item da Etapas para Implementação e dê sugestões de como essas etapas devem ser aplicadas em um cenário real.
+                  Detalhe cada item indicando o passo a passo para implementação do plano de ação, ou seja, as etapas que a empresa precisa cumprir dentro deste plano.
                   Explique também por que essas etapas são relevantes para mitigar o risco identificado.
                   Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
                   
                   Sua resposta deve manter o seguinte padrão de estrutura:
-                     Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                     Inicie descrevendo a abordagem prevista no plano, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
                      Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
                      Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
                      Não indique negrito utilizando '*'.
@@ -222,9 +222,11 @@ def gerarResposta(idFicha:int):
                         <br/> <b>Etapas para Implementação:</b>
 
                         <ul> 
-                        <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
-                        <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
-                        <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
+                        <li>- 'etapa 1'</li> 
+                        <li>- 'etapa 2'</li> 
+                        <li>- 'etapa 3'</li> 
+                        ...
+                        Quantas etapas forem necessárias
                         </ul>
                """
 
