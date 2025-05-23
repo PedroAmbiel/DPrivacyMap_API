@@ -1,7 +1,6 @@
 from constants import *
 from dataclasses import dataclass, field, asdict
 import json
-# from ollama import Options
 from models.ai.ai_options import Options
 
 @dataclass

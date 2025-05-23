@@ -41,34 +41,6 @@ basicHeader = {
 url = 'http://localhost:11434/api/generate'
 
 def criarBodyRequestAI(userPrompt):
-   # sys_prompt = "Você é um analista de dados, focado em segurança LGPD, sempre responda com sentido de ordem, instruindo o usuário a seguir suas sugestões. Você nunca irá sugerir a criação de sistemas de informação ao usuário, somente soluções habeis de realizar de forma manual"
-
-   # sys_prompt = f"Responda como se fosse um profissional do meio jurídico, sempre seja claro e preciso na resposta. Sempre formule respostas curtas. Utilize o contexto para complementar a resposta <context>{tratativa}</context>"
-
-   # sys_prompt = f"""
-   #                  Atue como um especialista jurídico em proteção de dados e segurança da informação, com conhecimento aprofundado na LGPD (Lei nº 13.709/2018). Elabore respostas com linguagem objetiva, imperativa e técnica, como se estivesse redigindo uma diretriz corporativa ou instrução normativa. Nunca utilize elementos de linguagem direta ao usuário como "você", "sua empresa", ou "deve-se fazer".
-
-   #                  As respostas devem apresentar instruções claras, diretas e aplicáveis à área mencionada, com base nos princípios da LGPD. Use o contexto abaixo para embasar a redação da diretriz:
-
-   #                  <context>{tratativa}</context>
-   #               """
-
-   # sys_prompt = f"""
-   #                Considere que você é um advogado especializado em gestão de LGPD e na criação e gestão de planos de ação para uma implementação completa de 
-   #                um projeto de LGPD em grandes empresas. Você foi contratado para criar um plano efetivo e detalhado para o plano apresentado.
-
-   #                Utilize os dados a seguir para complementar sua resposta: {tratativa} 
-   #              """
-
-   # sys_prompt = f"""
-   #                Você é um advogado especialista em LGPD, com foco em ajudar empresas a entender e aplicar práticas de proteção de dados pessoais. 
-   #                Sua missão é analisar planos de ação com base em riscos identificados e fornecer explicações claras, simples e objetivas. 
-   #                Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
-   #                Nunca responda diretamente à pergunta.
-   #                Não alongue suas respostas para mais de 300 palavras.
-
-   #                Suas respostas devem utilizar o seguinte contexto: {tratativa}
-   #               """
    
    sys_prompt = f"""
                Evite termos jurídicos técnicos e fale como se estivesse explicando para gestores de empresas que não são da área jurídica.
@@ -136,155 +108,6 @@ def gerarResposta(idFicha:int):
          
          conn.commit()
 
-         # user_prompt += f"<tratativas>{str(tratativas)} </tratativas> \nA partir das tratativas informadas, para *CADA TRATATIVA DIFERENTE*, informe o nome da tratativa. Em seguida, descreva como deve ser o protocolo para assegurar a integridade do dado. Sua resposta deve SEMPRE ter o seguinte padrão: <title>Tratativa com base nos dados: {area} </title> \n <body><tratativa><significado></significado><sugestões></sugestões></tratativa></body> --END dentro da tag body, descreva somente suas sugestões COM BASE NAS TRATATIVAS. Não reescreva as tratativas novamente. As suas sugestões devem ser criada a partir das tratativas + suas próprias sugestões. Sempre seja o mais claro possível e explique como cada sugestão deve ser realizada."
-         # user_prompt = f"Trabalho na área de { item[4] } na minha empresa. Trabalho com informações sensíveis de meus clientes, e acabei encontrando um possível risco para \
-         # para minha empresa. Esse risco é {item[2]} e já tenho o plano {item[1]} para solucinar esse risco. Como devo prosseguir, quais são os passos para tratar esse risco? \
-         # <important>Sua resposta não deve ser montada com elementos html. Começe sua resposta explicando o plano e em seguida montando os passos</important>"
-         
-         # exemplo_resposta = (
-         #    "A empresa precisa garantir que nenhum dado pessoal seja coletado sem o consentimento claro do titular. "
-         #    "Para isso, é necessário criar formulários específicos que expliquem de forma simples quais dados serão coletados e para qual finalidade. "
-         #    "Esses formulários devem ser aplicados antes de qualquer coleta, e a equipe responsável precisa estar preparada para orientar os titulares nesse processo. "
-         #    "Além disso, o sistema da empresa deve ser ajustado para impedir o cadastro de dados sem a confirmação do consentimento, o que pode ser feito por meio de uma verificação obrigatória. "
-         #    "Todos os registros de consentimento devem ser armazenados de forma segura, garantindo que a empresa possa comprovar que seguiu as exigências da LGPD. "
-         #    "Com essas ações, o risco de coleta irregular é reduzido e a empresa demonstra comprometimento com a privacidade dos usuários."
-         # )
-
-         # user_prompt = f"""
-         #                   Área responsável: {item[4]}.  
-         #                   Risco identificado: {item[2]}.  
-         #                   Plano de mitigação em andamento: {item[1]}.
-                           
-         #                   Com base nessas informações, elabore uma diretriz objetiva e impessoal, descrevendo como proceder na tratativa desse risco. 
-         #                   A linguagem deve ser imperativa, com tom normativo e institucional. 
-         #                   A resposta não deve ser dirigida a uma pessoa ou conter instruções pessoais. 
-         #                   Tenha como base para sua resposta a descrição do plano, o risco identificado e a área.
-         #                   Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, sem utilizar elementos HTML ou estrutura de lista. 
-         #                   Sua resposta deve ser um texto corrido e NÃO deve utilizar estrutura de passo a passo ou separar tópicos por numeração.
-         #                   Não utilize o caractére especial '*'
-         #                """
-         
-
-         # user_prompt = f"""
-         #                   Dado o risco {item[2]}, crie uma descrição completa do plano {item[1]},
-         #                   baseada no sistema jurídico brasileiro, porém escrito de forma didática para guiar os colaboradores 
-         #                   das empresas para a correta implementação dos planos de ação. Para tanto, seja bem detalhado e utilize palavras fora do 
-         #                   jargão jurídico, formal porém não tão técnico, de modo que a linguagem possa ser compreendida pelos colaboradores, 
-         #                   criando descrições completas. Responda na seguinte estrutura:
-
-         #                   EXEMPLO:
-         #                      Objetivo: 'explicação do plano'
-         #                      Passos: 'separação de passo a passo, explicando a sua importancia para resolução do risco em questão'
-
-         #               """
-         # exemplo_area = "Regulatórios"
-         # exemplo_risco = "Coleta de dados pessoais sem consentimento do titular"
-         # exemplo_titulo = "Implementação de política de consentimento"
-         # exemplo_descricao = (
-         #    "Objetivo: Garantir que todos os dados pessoais sejam coletados com o consentimento expresso do titular. "
-         #    "Passo a passo: 1. Criar formulários de consentimento. 2. Treinar equipe para uso dos formulários. "
-            # "3. Inserir verificação obrigatória de consentimento no sistema. 4. Armazenar registros de consentimento."
-         # )
-
-
-         # user_prompt = f"""
-         #                   Exemplo de entrada:
-
-         #                   Área afetada: {exemplo_area}
-         #                   Risco identificado: {exemplo_risco}
-         #                   Plano proposto: {exemplo_titulo}
-         #                   Descrição do plano: {exemplo_descricao}
-
-         #                   Resposta esperada:
-         #                   {exemplo_resposta}
-
-         #                   Agora gere um plano de ação para o seguinte caso.
-
-         #                   Área afetada: {item[4]}
-         #                   Risco identificado: {item[2]}
-         #                   Plano proposto: {item[1]}
-         #                   Descrição do plano: {item[7]}
-
-         #                   Com base nessas informações, elabore um plano de ação completo em texto corrido.
-         #                   Tenha como base para sua resposta a descrição do plano, o risco identificado e formule sua resposta com base nesses aspectos. 
-         #                   A resposta deve explicar de forma clara o que deve ser feito, como e por quê, sem usar tópicos, listas ou marcações. 
-         #                   Evite vocabulário jurídico e explique como se estivesse orientando uma equipe de gestão comum.
-         #                   Formule respostas curtas.
-         #                """
-
-
-# como ela é relacionada ao plano em andamento
-<<<<<<< HEAD
-         user_prompt = f"""
-                  Área responsável: {item[4]}.  
-                  Risco identificado: {item[2]}.  
-                  Plano de mitigação em andamento: {item[1]}.
-
-                  Explique o plano utilizando a seguinte descrição:
-                  {item[7]}
-
-                  Detalhe cada item indicando o passo a passo para implementação do plano de ação, ou seja, as etapas que a empresa precisa cumprir dentro deste plano.
-                  Explique também por que essas etapas são relevantes para mitigar o risco identificado.
-                  Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
-                  
-                  Sua resposta deve manter o seguinte padrão de estrutura:
-                     Inicie descrevendo a abordagem prevista no plano, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
-                     Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
-                     Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
-                     Não indique negrito utilizando '*'.
-                     Sua resposta não deve passar de dois parágrafos. 
-                     Utilize <br/> para quebra de linha.
-
-                     Exemplo de saída esperada:
-
-                        <b>Objetivo:</b> 'Descreva o objetivo'
-                        
-                        <br/> <b>Etapas para Implementação:</b>
-
-                        <ul> 
-                        <li>- 'etapa 1'</li> 
-                        <li>- 'etapa 2'</li> 
-                        <li>- 'etapa 3'</li> 
-                        ...
-                        Quantas etapas forem necessárias
-                        </ul>
-               """
-
-=======
->>>>>>> 85cf20c3a1282da3d0aa6b9e99ac1210707bb7e7
-         # user_prompt = f"""
-                  # Área responsável: {item[4]}.  
-                  # Risco identificado: {item[2]}.  
-                  # Plano de mitigação em andamento: {item[1]}.
-
-                  # Explique o plano utilizando a seguinte descrição:
-                  # {item[7]}
-
-                  # Explique cada item da Etapas para Implementação e dê sugestões de como essas etapas devem ser aplicadas em um cenário real.
-                  # Explique também por que essas etapas são relevantes para mitigar o risco identificado.
-                  # Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
-                  
-                  # Sua resposta deve manter o seguinte padrão de estrutura:
-                  #    Inicie descrevendo a abordagem prevista no plano, sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
-                  #    Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
-                  #    Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
-                  #    Não indique negrito utilizando '*'.
-                  #    Sua resposta não deve passar de dois parágrafos. 
-                  #    Utilize <br/> para quebra de linha.
-
-                  #    Exemplo de saída esperada:
-
-                  #       <b>Objetivo:</b> 'Descreva o objetivo'
-                        
-                  #       <br/> <b>Etapas para Implementação:</b>
-
-                  #       <ul> 
-                  #       <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
-                  #       <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
-                  #       <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
-                  #       </ul>
-         #       """
-
          if(secao == 1):
             user_prompt = f"""
                            Minha empresa está iniciando trabalhos com coleta de dados sensíveis.
@@ -299,17 +122,17 @@ def gerarResposta(idFicha:int):
             user_prompt = f"""
                            Área responsável: {item[4]}.  
                            Risco identificado: {item[2]}.  
+                           Plano de mitigação em andamento: {item[1]}.
 
-                           O plano para tratar esse risco é {item[1]} e minha empresa utiliza os seguintes passos para tratar o problema:
+                           Explique o plano utilizando a seguinte descrição:
                            {item[7]}
 
-
-                           Explique o plano que será utilizado pela empresa.
-                           Adicione ao plano sugestões que melhorem a mitigar esses riscos.
-                           Caso algum desses planos não sejam seguidos, no que pode acarretar para minha empresa?
+                           Detalhe cada item indicando o passo a passo para implementação do plano de ação, ou seja, as etapas que a empresa precisa cumprir dentro deste plano.
+                           Explique também por que essas etapas são relevantes para mitigar o risco identificado.
+                           Explique com suas palavras o por que a área responsável deve se preocupar com esses riscos.
                            
                            Sua resposta deve manter o seguinte padrão de estrutura:
-                              Inicie descrevendo como os , sem  e, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
+                              Inicie descrevendo a abordagem prevista no plano, em seguida, a sequência de ações recomendadas, utilizando elementos HTML. 
                               Ao iniciar um novo topico utilizar negrito <b></b> e em seguida dois pontos ':'.
                               Quando falar de um novo tópico da descrição do plano, inicie o tópico com '-'.
                               Não indique negrito utilizando '*'.
@@ -318,72 +141,40 @@ def gerarResposta(idFicha:int):
 
                               Exemplo de saída esperada:
 
-                                 <b>Explicação do plano utilizado pela empresa:</b> 'Descreva aqui'
+                                 <b>Objetivo:</b> 'Descreva o objetivo'
                                  
-                                 <br/> <b>Riscos identificados caso a empresa não siga as etapas propostas:</b>
+                                 <br/> <b>Etapas para Implementação:</b>
 
-                                 <ul> 
-                                 <li>- A avaliação inicial permite alinhar a tecnologia ao ambiente existente, garantindo menor impacto e maior eficiência.</li> 
-                                 <li>- O treinamento assegura que a equipe possa operar e manter a criptografia de forma autônoma e segura, o que é crucial para a sustentabilidade da solução.</li> 
-                                 <li>- O monitoramento contínuo é necessário para verificar se os dados permanecem protegidos contra novos tipos de ameaças.</li> 
-                                 </ul>
-                        """
-         
+                              <ul> 
+                                 <li>- 'etapa 1'</li> 
+                                 <li>- 'etapa 2'</li> 
+                                 <li>- 'etapa 3'</li> 
+                                 ...
+                                 Quantas etapas forem necessárias
+                              </ul>
+                     """ 
+            
          data = criarBodyRequestAI(user_prompt)
 
          print("USER PROMPT: ", data.prompt)
          print("SYSTEM PROMPT: ", data.system)
 
-            # client = OpenAI(
-            # base_url="https://openrouter.ai/api/v1",
-            # api_key="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",
-            # )
-            # completion = client.chat.completions.create(
-            #    model="deepseek/deepseek-prover-v2:free",
-            #    messages=[
-            #       {
-            #          "role": "system",
-            #          "content": data.system_prompt
-            #       },
-            #       {
-            #          "role": "user",
-            #          "content": data.prompt
-            #       },
-
-            #    ],
-            #    extra_body={
-            #       "top_k": data.options.top_k,
-            #    },
-            #    max_tokens= 600,
-            #    top_p=.6,
-            #    stream=False,
-            #    temperature=.2
-            # )
-
-         # print(data.to_dict())
-
          response = requests.post(url, headers=basicHeader, json= data.to_dict())
 
          print('Response:', response.json())
-            # print('Response:', completion.choices[0].message.content)
-
          update_secao_resposta = "UPDATE \"DPrivacy\".secao_plano_ficha_resposta SET resposta = %s, data_fim = now() WHERE id = %s"
 
          cur.execute(update_secao_resposta, (response.json()['response'], id_inserido, ))
 
-         # cur.execute(update_secao_resposta, (completion.choices[0].message.content, id_inserido, ))
          secao += 1
          conn.commit()
 
-      # return response.json()['response']
 
 
 @api.post("/login")
 def login(body:UserLogin):
-   #Criptografando a senha
    password = body.senha
    password_bytes = password.encode('utf-8')
-   # SHA-256 hash
    senha_hashed = hashlib.sha256(password_bytes)
 
 
@@ -395,7 +186,6 @@ def login(body:UserLogin):
                            " WHERE u.email = %s ", [body.email]).fetchone()
 
 
-      # try:
       if(select == None):
          raise HTTPException(status_code=400, detail="Usuário não encontrado")
       
@@ -441,12 +231,6 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
          update += " revisao = %s, "
 
       update += " finalizado = true, data_finalizado = now() "
-
-      # if(update[len(update)-2] == ','):
-      #    print(update[len(update)-2])
-      #    update = replacer(update, '', len(update)-2)
-         # update[len(update)-2].replace('')
-         # print(update)
 
       update += f' WHERE id = {body.idFicha} '
 
@@ -507,44 +291,6 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
             for finalidade in body.finalidade:
                cur.execute(insert_dados, (body.idFicha, finalidade))
-
-
-         ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         # if(body.retencao):
-         #    print("Entrou RL_RETENCAO")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
-
-         #    for retencao in body.retencao:
-         #       cur.execute(insert_dados, (body.idFicha, retencao))
-
-
-         ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         # if(body.revisao):
-         #    print("Entrou RL_REVISAO")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
-
-         #    for revisao in body.revisao:
-         #       cur.execute(insert_dados, (body.idFicha, revisao))
-
-         ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
-         # if(body.seguranca):
-         #    print("Entrou RL_SEGURANCA")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_seguranca WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_seguranca (fk_ficha, seguranca) VALUES (%s, %s) "
-
-         #    for seguranca in body.seguranca:
-         #       cur.execute(insert_dados, (body.idFicha, seguranca))
          
 
          ##----------------- Inserts nas tabelas de rl_tipo_operacao -----------------##
@@ -676,33 +422,6 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
             for finalidade in body.finalidade:
                cur.execute(insert_dados, (id_inserido, finalidade))
 
-
-         ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         # if(body.retencao):
-         #    print("Entrou RL_RETENCAO")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
-
-         #    for retencao in body.retencao:
-         #       cur.execute(insert_dados, (id_inserido, retencao))
-
-
-         ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         # if(body.revisao):
-         #    print("Entrou RL_REVISAO")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
-
-         #    for revisao in body.revisao:
-         #       cur.execute(insert_dados, (id_inserido, revisao))
-
-         ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
-         # if(body.seguranca):
-         #    print("Entrou RL_SEGURANCA")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_seguranca (fk_ficha, seguranca) VALUES (%s, %s) "
-
-         #    for seguranca in body.seguranca:
-         #       cur.execute(insert_dados, (id_inserido, seguranca))
-         
-
          ##----------------- Inserts nas tabelas de rl_tipo_operacao -----------------##
          if(body.tipoOperacao):
             print("Entrou RL_TIPO_OPERACAO")
@@ -710,8 +429,6 @@ def finalizarFichaInventario(body:FichaInventarioCadastro):
 
             for tipoOperacao in body.tipoOperacao:
                cur.execute(insert_dados, (id_inserido, tipoOperacao))
-
-         print("ACABOU")
 
          conn.commit()
 
@@ -757,8 +474,6 @@ def atualizarFicha(body:FichaInventarioCadastro):
       if(update[len(update)-2] == ','):
          print(update[len(update)-2])
          update = replacer(update, '', len(update)-2)
-         # update[len(update)-2].replace('')
-         # print(update)
 
       update += f' WHERE id = {body.idFicha} '
 
@@ -819,44 +534,6 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
             for finalidade in body.finalidade:
                cur.execute(insert_dados, (body.idFicha, finalidade))
-
-
-         ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         # if(body.retencao):
-         #    print("Entrou RL_RETENCAO")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
-
-         #    for retencao in body.retencao:
-         #       cur.execute(insert_dados, (body.idFicha, retencao))
-
-
-         ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         # if(body.revisao):
-         #    print("Entrou RL_REVISAO")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
-
-         #    for revisao in body.revisao:
-         #       cur.execute(insert_dados, (body.idFicha, revisao))
-
-         ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
-         # if(body.seguranca):
-         #    print("Entrou RL_SEGURANCA")
-         #    delete_dados = "DELETE FROM \"DPrivacy\".rl_ficha_seguranca WHERE fk_ficha = %s "
-
-         #    cur.execute(delete_dados, (body.idFicha,))
-
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_seguranca (fk_ficha, seguranca) VALUES (%s, %s) "
-
-         #    for seguranca in body.seguranca:
-         #       cur.execute(insert_dados, (body.idFicha, seguranca))
          
 
          ##----------------- Inserts nas tabelas de rl_tipo_operacao -----------------##
@@ -986,32 +663,6 @@ def atualizarFicha(body:FichaInventarioCadastro):
 
             for finalidade in body.finalidade:
                cur.execute(insert_dados, (id_inserido, finalidade))
-
-
-         ##----------------- Inserts nas tabelas de rl_retencao -----------------##
-         # if(body.retencao):
-         #    print("Entrou RL_RETENCAO")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_retencao (fk_ficha, retencao) VALUES (%s, %s) "
-
-         #    for retencao in body.retencao:
-         #       cur.execute(insert_dados, (id_inserido, retencao))
-
-
-         ##----------------- Inserts nas tabelas de rl_revisao -----------------##
-         # if(body.revisao):
-         #    print("Entrou RL_REVISAO")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_revisao (fk_ficha, revisao) VALUES (%s, %s) "
-
-         #    for revisao in body.revisao:
-         #       cur.execute(insert_dados, (id_inserido, revisao))
-
-         ##----------------- Inserts nas tabelas de rl_seguranca -----------------##
-         # if(body.seguranca):
-         #    print("Entrou RL_SEGURANCA")
-         #    insert_dados = "INSERT INTO \"DPrivacy\".rl_ficha_seguranca (fk_ficha, seguranca) VALUES (%s, %s) "
-
-         #    for seguranca in body.seguranca:
-         #       cur.execute(insert_dados, (id_inserido, seguranca))
          
 
          ##----------------- Inserts nas tabelas de rl_tipo_operacao -----------------##
@@ -1059,9 +710,6 @@ def listarPlanosRedigindo(id_ficha):
                            " WHERE fi.id = %s ", [id_ficha]).fetchone()
       
       listaOperacoes = []
-      # listaSeguranca = []
-      # listaRevisao = []
-      # listaRetencao = []
       listaFinalidade = []
       listaDadoColetado = []
       
@@ -1075,29 +723,7 @@ def listarPlanosRedigindo(id_ficha):
                            " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
       for row in selectfinalidade:
          listaFinalidade.append(row[0])
-         
       
-      # selectretencao = cur.execute(f" SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao " +
-      #                      " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
-      # for row in selectretencao:
-      #    listaRetencao.append(row[0])
-      
-
-
-      # selectrevisao = cur.execute(f" SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao " +
-      #                      " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
-      # for row in selectrevisao:
-      #    listaRevisao.append(row[0])
-      
-
-
-      # selectseguranca = cur.execute(f" SELECT seguranca FROM \"DPrivacy\".rl_ficha_seguranca " +
-      #                      " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
-      # for row in selectseguranca:
-      #    listaSeguranca.append(row[0])
-      
-
-
       selecttipoperacao = cur.execute(f" SELECT tipo_operacao FROM \"DPrivacy\".rl_ficha_tipo_operacao " +
                            " WHERE fk_ficha = %s ", [id_ficha]).fetchall()
       for row in selecttipoperacao:
@@ -1122,7 +748,6 @@ def listarPlanosRedigindo(id_ficha):
          
       else:
          response = False
-
 
       return response
    
@@ -1268,14 +893,10 @@ def criarSecoesFicha(body:SecaoFichaRequest):
 
    select_dados_coletados = f"SELECT dado_coletado FROM \"DPrivacy\".rl_ficha_dados_coletados WHERE fk_ficha = {body.idFicha} "
    select_finalidade = f"SELECT finalidade FROM \"DPrivacy\".rl_ficha_finalidade WHERE fk_ficha = {body.idFicha} "
-   # select_retencao = f"SELECT retencao FROM \"DPrivacy\".rl_ficha_retencao WHERE fk_ficha = {body.idFicha} "
-   # select_revisao = f"SELECT revisao FROM \"DPrivacy\".rl_ficha_revisao WHERE fk_ficha = {body.idFicha} "
    select_tipo_operacao = f"SELECT tipo_operacao FROM \"DPrivacy\".rl_ficha_tipo_operacao WHERE fk_ficha = {body.idFicha} "
 
    listDadosColetados = []
    listFinalidade = []
-   # listRetencao = []
-   # listRevisao = []
    listTipoOperacao = []
 
    with conn.cursor() as cur:
@@ -1294,18 +915,6 @@ def criarSecoesFicha(body:SecaoFichaRequest):
 
       for item in select:
          listFinalidade.append(item[0])
-
-      #RETENÇÃO#
-      # select = cur.execute(select_retencao).fetchall()
-
-      # for item in select:
-      #    listRetencao.append(item[0])
-
-      #REVISÃO#
-      # select = cur.execute(select_revisao).fetchall()
-
-      # for item in select:
-      #    listRevisao.append(item[0])
 
       #TIPO OPERAÇÃO#
       select = cur.execute(select_tipo_operacao).fetchall()
@@ -1331,8 +940,6 @@ def criarSecoesFicha(body:SecaoFichaRequest):
       insert_secao = "INSERT INTO \"DPrivacy\".secao_plano_ficha(secao, fk_ficha, plano, risco, tratativa) VALUES (%s, %s, %s, %s, %s)"
 
       cur.execute(insert_secao, (1, ficha.id, 'Resumo Geral', '', 'Explicação Geral', ))
-
-      # insert_secao = "INSERT INTO \"DPrivacy\".secao_plano_ficha(secao, fk_ficha, plano, risco, tratativa) VALUES (%s, %s, %s, %s, %s)"
 
       secao = 2
       for item in select:
